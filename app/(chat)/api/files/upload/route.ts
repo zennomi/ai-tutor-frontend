@@ -1,4 +1,4 @@
-import { put } from "@vercel/blob";
+import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -17,6 +17,35 @@ const FileSchema = z.object({
     }),
 });
 
+const requiredEnvVars = [
+  "S3_FILE_URL",
+  "S3_ACCESS_KEY_ID",
+  "S3_SECRET_ACCESS_KEY",
+  "S3_REGION",
+  "S3_BUCKET",
+  "S3_ENDPOINT",
+] as const;
+
+function validateEnv() {
+  const missing = requiredEnvVars.filter((key) => !process.env[key]);
+
+  if (missing.length > 0) {
+    throw new Error(`Missing required env vars: ${missing.join(", ")}`);
+  }
+}
+
+function createS3Client() {
+  return new S3Client({
+    region: process.env.S3_REGION,
+    endpoint: process.env.S3_ENDPOINT,
+    forcePathStyle: true,
+    credentials: {
+      accessKeyId: process.env.S3_ACCESS_KEY_ID ?? "",
+      secretAccessKey: process.env.S3_SECRET_ACCESS_KEY ?? "",
+    },
+  });
+}
+
 export async function POST(request: Request) {
   const session = await auth();
 
@@ -26,6 +55,16 @@ export async function POST(request: Request) {
 
   if (request.body === null) {
     return new Response("Request body is empty", { status: 400 });
+  }
+
+  try {
+    validateEnv();
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Missing env vars" },
+      { status: 500 }
+    );
   }
 
   try {
@@ -48,18 +87,34 @@ export async function POST(request: Request) {
 
     // Get filename from formData since Blob doesn't have name property
     const filename = (formData.get("file") as File).name;
-    const fileBuffer = await file.arrayBuffer();
+    const fileBuffer = Buffer.from(await file.arrayBuffer());
+
+    const client = createS3Client();
 
     try {
-      const data = await put(`${filename}`, fileBuffer, {
-        access: "public",
-      });
+      await client.send(
+        new PutObjectCommand({
+          Bucket: process.env.S3_BUCKET,
+          Key: filename,
+          Body: fileBuffer,
+          ContentType: file.type,
+          ACL: "public-read",
+        })
+      );
 
-      return NextResponse.json(data);
+      const publicUrl = `${process.env.S3_FILE_URL}/${filename}`;
+
+      return NextResponse.json({
+        url: publicUrl,
+        pathname: filename,
+        contentType: file.type,
+      });
     } catch (_error) {
+      console.error(_error);
       return NextResponse.json({ error: "Upload failed" }, { status: 500 });
     }
   } catch (_error) {
+    console.error(_error);
     return NextResponse.json(
       { error: "Failed to process request" },
       { status: 500 }
