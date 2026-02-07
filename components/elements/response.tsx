@@ -55,7 +55,8 @@ export function preprocessLaTeX(content: string): string {
   );
 
   // Step 3: Escape dollar signs that are likely currency indicators
-  processedContent = processedContent.replace(/\$(?=\d)/g, "\\$");
+  // This step is disabled because it causes issues with LaTeX expressions, and this app maily use vietnamese
+  // processedContent = processedContent.replace(/\$(?=\d)/g, "\\$");
 
   // Step 4: Restore LaTeX expressions
   processedContent = processedContent.replace(
@@ -72,6 +73,8 @@ export function preprocessLaTeX(content: string): string {
   // Step 6: Apply additional escaping functions
   processedContent = escapeBrackets(processedContent);
   processedContent = escapeMhchem(processedContent);
+
+  console.log(processedContent);
 
   return processedContent;
 }
