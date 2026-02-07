@@ -26,7 +26,7 @@ Copy `.env.example` to `.env.local` and fill:
 - **Framework**: Next.js 16 App Router in `app/` with server components and server actions.
 - **Auth**: NextAuth.js config in `app/(auth)/auth.ts` & `auth.config.ts`; routes under `app/(auth)/api/auth/*`; pages for login/register in `app/(auth)/*`.
 - **Chat experience**: UI pages under `app/(chat)` with shared layout. Chat API at `app/(chat)/api/chat/route.ts` streams responses via `ai` SDK `streamText`, enforces per-user entitlements, and persists messages.
-- **AI layer**: Model catalog in `lib/ai/models.ts`; providers and system prompt in `lib/ai/providers.ts` and `lib/ai/prompts.ts`; tool definitions in `lib/ai/tools/*` (weather, document CRUD, suggestions); default model `google/gemini-2.5-flash-lite`.
+- **AI layer**: Model catalog in `lib/ai/models.ts`; providers and system prompt in `lib/ai/providers.ts` and `lib/ai/prompts.ts`; tool definitions in `lib/ai/tools/*` (weather, document CRUD, suggestions); default model `gemini-2.5-flash-lite`.
 - **Data layer**: Drizzle ORM schemas/queries in `lib/db/schema.ts` and `lib/db/queries.ts`; migrations under `lib/db/migrations`; migration runner `lib/db/migrate.ts` (also invoked by `pnpm build`).
 - **Artifacts & streaming**: Resumeable streams via `resumable-stream`; Redis-backed stream IDs in chat API; artifact helpers in `lib/artifacts/server.ts`.
 - **UI components**: Comprehensive component library in `components/`, including AI/graph elements (`components/ai-elements/*`), chat/message surfaces, editors (CodeMirror/ProseMirror in `components/text-editor.tsx`, `lib/editor/*`), shadcn/Radix primitives in `components/ui/*`, theming in `components/theme-provider.tsx`.
