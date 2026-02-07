@@ -20,7 +20,12 @@
       "!ai-sdk",
       "!components/ui",
       "!lib/utils.ts",
-      "!hooks/use-mobile.ts"
+      "!hooks/use-mobile.ts",
+      "!.agent",
+      "!.claude",
+      "!.cursor",
+      "!.rulesync",
+      "!.mcp.json"
     ]
   },
   "linter": {

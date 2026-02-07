@@ -11,16 +11,17 @@ export type ChatModel = {
 export const chatModels: ChatModel[] = [
   // Google (direct)
   {
-    id: "gemini-2.5-flash",
-    name: "Gemini 2.5 Flash",
+    id: "gemini-3-pro-preview",
+    name: "Trợ giảng Thủ khoa",
     provider: "google",
-    description: "Ultra fast and affordable",
+    description:
+      "Trợ giảng Top 1 Hà Nội Top 3 Quốc Gia Á khoa Đầu vào Thủ khoa đầu ra",
   },
   {
-    id: "gemini-3-pro-preview",
-    name: "Gemini 3 Pro Preview",
+    id: "gemini-2.0-flash",
+    name: "Trợ giảng thực tập",
     provider: "google",
-    description: "Preview of Gemini 3 Pro",
+    description: "Trợ giảng vừa được nhận vào làm lương 1 triệu mốt",
   },
 ];
 

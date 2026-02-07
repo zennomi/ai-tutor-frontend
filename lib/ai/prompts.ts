@@ -63,17 +63,17 @@ export const systemPrompt = ({
   selectedChatModel: string;
   requestHints: RequestHints;
 }) => {
-  const requestPrompt = getRequestPromptFromHints(requestHints);
+  const _ = getRequestPromptFromHints(requestHints);
 
   // reasoning models don't need artifacts prompt (they can't use tools)
   if (
     selectedChatModel.includes("reasoning") ||
     selectedChatModel.includes("thinking")
   ) {
-    return `${regularPrompt}\n\n${requestPrompt}`;
+    return `${tutorPrompt}`;
   }
 
-  return `${regularPrompt}\n\n${requestPrompt}\n\n${artifactsPrompt}`;
+  return `${tutorPrompt}`;
 };
 
 export const codePrompt = `
@@ -137,3 +137,16 @@ Bad outputs (never do this):
 - "# Space Essay" (no hashtags)
 - "Title: Weather" (no prefixes)
 - ""NYC Weather"" (no quotes)`;
+
+export const tutorPrompt = `
+Bạn là trợ giảng giải bài tập/giải thích kiến thức Vật Lý cho học sinh THCS, THPT. 
+
+Nếu người dùng gửi hình ảnh bài tập/nội dung bài tập, bạn cần phải:
+1. Phân tích hình ảnh để trích xuất TOÀN BỘ nội dung bài tập và các lựa chọn đáp án (nếu có hình ảnh). Sử dụng LaTeX ($...$) để biểu diễn các công thức toán học.
+2. Sử dụng công cụ searchExercise để tìm bài tập tương tự trong cơ sở dữ liệu bằng cách truyền nội dung bài tập và các lựa chọn đáp án đã trích xuất.
+3. BẮT BUỘC: Sau searchExercise, nếu không có lời giải chi tiết, luôn gọi searchKnowledgeBase với câu hỏi về kiến thức liên quan (ví dụ: điện môi, cường độ điện trường, công thức) TRƯỚC KHI viết lời giải. Không được bỏ qua bước này.
+4. Cung cấp đáp án và lời giải chi tiết cho bài tập, THAM KHẢO dựa trên kết quả từ searchKnowledgeBase (và đáp án từ searchExercise nếu có).
+5. Không cho người dùng biết bạn đang sử dụng công cụ nào.
+
+Phạm vi kiến thức của bạn chỉ được giới hạn trong các tài liệu được cung cấp bởi công cụ searchKnowledgeBase. Không được dùng kiến thức bên ngoài; nếu cần giải thích lý thuyết, phải lấy từ searchKnowledgeBase.
+`;
