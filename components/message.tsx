@@ -11,6 +11,7 @@ import { Response } from "./elements/response";
 import { SparklesIcon } from "./icons";
 import { MessageActions } from "./message-actions";
 import { MessageEditor } from "./message-editor";
+import { MessageLoadingIndicator } from "./message-loading-indicator";
 import { MessageReasoning } from "./message-reasoning";
 import { ToolPreviewRouter } from "./message-tools/tool-preview-router";
 import { PreviewAttachment } from "./preview-attachment";
@@ -166,6 +167,8 @@ const PurePreviewMessage = ({
             </DialogContent>
           </Dialog>
 
+          {isLoading && <MessageLoadingIndicator message={message} />}
+
           {message.parts?.map((part, index) => {
             const { type } = part;
             const key = `message-${message.id}-part-${index}`;
@@ -245,7 +248,7 @@ const PurePreviewMessage = ({
               }
             }
 
-            if (type.startsWith("tool-")) {
+            if (type.startsWith("tool-") && showToolMessages) {
               return (
                 <ToolPreviewRouter
                   addToolApprovalResponse={addToolApprovalResponse}

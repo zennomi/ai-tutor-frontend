@@ -18,7 +18,7 @@ export const chatModels: ChatModel[] = [
       "Trợ giảng Top 1 Hà Nội Top 3 Quốc Gia Á khoa Đầu vào Thủ khoa đầu ra",
   },
   {
-    id: "gemini-2.0-flash",
+    id: "gemini-2.5-flash",
     name: "Trợ giảng thực tập",
     provider: "google",
     description: "Trợ giảng vừa được nhận vào làm lương 1 triệu mốt",
