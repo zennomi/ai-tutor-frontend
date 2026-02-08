@@ -36,12 +36,12 @@ export function PureMessageActions({
 
   const handleCopy = async () => {
     if (!textFromParts) {
-      toast.error("There's no text to copy!");
+      toast.error("Không có văn bản để sao chép!");
       return;
     }
 
     await copyToClipboard(textFromParts);
-    toast.success("Copied to clipboard!");
+    toast.success("Đã sao chép văn bản vào clipboard!");
   };
 
   // User messages get edit (on hover) and copy actions
@@ -59,7 +59,7 @@ export function PureMessageActions({
               <PencilEditIcon />
             </Action>
           )}
-          <Action onClick={handleCopy} tooltip="Copy">
+          <Action onClick={handleCopy} tooltip="Sao chép">
             <CopyIcon />
           </Action>
         </div>
@@ -69,7 +69,7 @@ export function PureMessageActions({
 
   return (
     <Actions className="-ml-0.5">
-      <Action onClick={handleCopy} tooltip="Copy">
+      <Action onClick={handleCopy} tooltip="Sao chép">
         <CopyIcon />
       </Action>
 
@@ -87,7 +87,7 @@ export function PureMessageActions({
           });
 
           toast.promise(upvote, {
-            loading: "Upvoting Response...",
+            loading: "Đang đánh giá phản hồi...",
             success: () => {
               mutate<Vote[]>(
                 `/api/vote?chatId=${chatId}`,
@@ -112,12 +112,12 @@ export function PureMessageActions({
                 { revalidate: false }
               );
 
-              return "Upvoted Response!";
+              return "Đánh giá phản hồi thành công!";
             },
-            error: "Failed to upvote response.",
+            error: "Không thể đánh giá phản hồi.",
           });
         }}
-        tooltip="Upvote Response"
+        tooltip="Đánh giá phản hồi"
       >
         <ThumbUpIcon />
       </Action>
@@ -136,7 +136,7 @@ export function PureMessageActions({
           });
 
           toast.promise(downvote, {
-            loading: "Downvoting Response...",
+            loading: "Đang đánh giá phản hồi...",
             success: () => {
               mutate<Vote[]>(
                 `/api/vote?chatId=${chatId}`,
@@ -161,12 +161,12 @@ export function PureMessageActions({
                 { revalidate: false }
               );
 
-              return "Downvoted Response!";
+              return "Đánh giá phản hồi thành công!";
             },
-            error: "Failed to downvote response.",
+            error: "Không thể đánh giá phản hồi.",
           });
         }}
-        tooltip="Downvote Response"
+        tooltip="Đánh giá phản hồi"
       >
         <ThumbDownIcon />
       </Action>

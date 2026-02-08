@@ -175,7 +175,7 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
     return (
       <SidebarGroup>
         <div className="px-2 py-1 text-sidebar-foreground/50 text-xs">
-          Today
+          Hôm nay
         </div>
         <SidebarGroupContent>
           <div className="flex flex-col">
@@ -205,7 +205,8 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
       <SidebarGroup>
         <SidebarGroupContent>
           <div className="flex w-full flex-row items-center justify-center gap-2 px-2 text-sm text-zinc-500">
-            Your conversations will appear here once you start chatting!
+            Các cuộc trò chuyện của bạn sẽ xuất hiện ở đây khi bạn bắt đầu trò
+            chuyện!
           </div>
         </SidebarGroupContent>
       </SidebarGroup>
@@ -230,7 +231,7 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
                     {groupedChats.today.length > 0 && (
                       <div>
                         <div className="px-2 py-1 text-sidebar-foreground/50 text-xs">
-                          Today
+                          Hôm nay
                         </div>
                         {groupedChats.today.map((chat) => (
                           <ChatItem
@@ -250,7 +251,7 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
                     {groupedChats.yesterday.length > 0 && (
                       <div>
                         <div className="px-2 py-1 text-sidebar-foreground/50 text-xs">
-                          Yesterday
+                          Hôm qua
                         </div>
                         {groupedChats.yesterday.map((chat) => (
                           <ChatItem
@@ -270,7 +271,7 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
                     {groupedChats.lastWeek.length > 0 && (
                       <div>
                         <div className="px-2 py-1 text-sidebar-foreground/50 text-xs">
-                          Last 7 days
+                          Tuần trước
                         </div>
                         {groupedChats.lastWeek.map((chat) => (
                           <ChatItem
@@ -290,7 +291,7 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
                     {groupedChats.lastMonth.length > 0 && (
                       <div>
                         <div className="px-2 py-1 text-sidebar-foreground/50 text-xs">
-                          Last 30 days
+                          Tháng trước
                         </div>
                         {groupedChats.lastMonth.map((chat) => (
                           <ChatItem
@@ -310,7 +311,7 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
                     {groupedChats.older.length > 0 && (
                       <div>
                         <div className="px-2 py-1 text-sidebar-foreground/50 text-xs">
-                          Older than last month
+                          Cũ hơn tháng trước
                         </div>
                         {groupedChats.older.map((chat) => (
                           <ChatItem
@@ -341,14 +342,14 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
 
           {hasReachedEnd ? (
             <div className="mt-8 flex w-full flex-row items-center justify-center gap-2 px-2 text-sm text-zinc-500">
-              You have reached the end of your chat history.
+              Bạn đã đạt đến cuối lịch sử trò chuyện của bạn.
             </div>
           ) : (
             <div className="mt-8 flex flex-row items-center gap-2 p-2 text-zinc-500 dark:text-zinc-400">
               <div className="animate-spin">
                 <LoaderIcon />
               </div>
-              <div>Loading Chats...</div>
+              <div>Đang tải các cuộc trò chuyện...</div>
             </div>
           )}
         </SidebarGroupContent>
@@ -357,16 +358,16 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
       <AlertDialog onOpenChange={setShowDeleteDialog} open={showDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogTitle>Bạn có chắc chắn không?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete your
-              chat and remove it from our servers.
+              Hành động này không thể hoàn tác. Điều này sẽ xóa cuộc trò chuyện
+              của bạn khỏi các máy chủ của chúng tôi.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>Hủy</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete}>
-              Continue
+              Tiếp tục
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
