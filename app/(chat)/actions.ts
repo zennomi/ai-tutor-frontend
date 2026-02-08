@@ -22,10 +22,16 @@ export async function generateTitleFromUserMessage({
 }: {
   message: UIMessage;
 }) {
+  const textMessage = getTextFromMessage(message);
+  console.log("textMessage", { textMessage });
+  if (!textMessage.trim()) {
+    // assume the message is an image
+    return "Phân tích hình ảnh";
+  }
   const { text } = await generateText({
     model: getTitleModel(),
     system: titlePrompt,
-    prompt: getTextFromMessage(message),
+    prompt: textMessage,
   });
   return text
     .replace(/^[#*"\s]+/, "")
