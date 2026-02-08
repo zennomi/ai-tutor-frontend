@@ -196,7 +196,7 @@ const PurePreviewMessage = ({
                       />
                       <ToolContent>
                         <div className="px-4 py-3 text-muted-foreground text-sm">
-                          Weather lookup was denied.
+                          Việc tra cứu thời tiết đã bị từ chối.
                         </div>
                       </ToolContent>
                     </Tool>
@@ -239,7 +239,7 @@ const PurePreviewMessage = ({
                             }}
                             type="button"
                           >
-                            Deny
+                          Từ chối
                           </button>
                           <button
                             className="rounded-md bg-primary px-3 py-1.5 text-primary-foreground text-sm transition-colors hover:bg-primary/90"
@@ -251,7 +251,7 @@ const PurePreviewMessage = ({
                             }}
                             type="button"
                           >
-                            Allow
+                          Cho phép
                           </button>
                         </div>
                       )}
@@ -270,7 +270,7 @@ const PurePreviewMessage = ({
                     className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-500 dark:bg-red-950/50"
                     key={toolCallId}
                   >
-                    Error creating document: {String(part.output.error)}
+                    Lỗi tạo tài liệu: {String(part.output.error)}
                   </div>
                 );
               }
@@ -293,7 +293,7 @@ const PurePreviewMessage = ({
                     className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-500 dark:bg-red-950/50"
                     key={toolCallId}
                   >
-                    Error updating document: {String(part.output.error)}
+                    Lỗi cập nhật tài liệu: {String(part.output.error)}
                   </div>
                 );
               }
@@ -325,7 +325,7 @@ const PurePreviewMessage = ({
                         output={
                           "error" in part.output ? (
                             <div className="rounded border p-2 text-red-500">
-                              Error: {String(part.output.error)}
+                              Lỗi: {String(part.output.error)}
                             </div>
                           ) : (
                             <DocumentToolResult
@@ -448,7 +448,7 @@ const PurePreviewMessage = ({
                         )}
                         {solution && (
                           <div className="mt-2 text-xs">
-                            <span className="font-medium">Solution:</span>{" "}
+                            <span className="font-medium">Giải pháp:</span>{" "}
                             {solution}
                           </div>
                         )}
@@ -482,7 +482,7 @@ const PurePreviewMessage = ({
 
                 return (
                   <ToolOutput
-                    errorText="Unexpected output"
+                    errorText="Đầu ra không mong muốn"
                     output={undefined}
                   />
                 );
@@ -536,7 +536,7 @@ export const ThinkingMessage = () => {
 
         <div className="flex w-full flex-col gap-2 md:gap-4">
           <div className="flex items-center gap-1 p-0 text-muted-foreground text-sm">
-            <span className="animate-pulse">Thinking</span>
+            <span className="animate-pulse">Đang suy nghĩ</span>
             <span className="inline-flex">
               <span className="animate-bounce [animation-delay:0ms]">.</span>
               <span className="animate-bounce [animation-delay:150ms]">.</span>

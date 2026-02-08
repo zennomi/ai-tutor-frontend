@@ -206,7 +206,7 @@ function PureMultimodalInput({
       const { error } = await response.json();
       toast.error(error);
     } catch (_error) {
-      toast.error("Failed to upload file, please try again!");
+      toast.error("Không thể tải tệp lên, vui lòng thử lại!");
     }
   }, []);
 
@@ -228,7 +228,7 @@ function PureMultimodalInput({
           ...successfullyUploadedAttachments,
         ]);
       } catch (error) {
-        console.error("Error uploading files!", error);
+        console.error("Lỗi tải lên tệp!", error);
       } finally {
         setUploadQueue([]);
       }
@@ -254,7 +254,7 @@ function PureMultimodalInput({
       // Prevent default paste behavior for images
       event.preventDefault();
 
-      setUploadQueue((prev) => [...prev, "Pasted image"]);
+      setUploadQueue((prev) => [...prev, "Ảnh đã dán"]);
 
       try {
         const uploadPromises = imageItems
@@ -276,7 +276,7 @@ function PureMultimodalInput({
         ]);
       } catch (error) {
         console.error("Error uploading pasted images:", error);
-        toast.error("Failed to upload pasted image(s)");
+        toast.error("Không thể tải lên ảnh đã dán");
       } finally {
         setUploadQueue([]);
       }
@@ -324,7 +324,7 @@ function PureMultimodalInput({
             return;
           }
           if (status !== "ready") {
-            toast.error("Please wait for the model to finish its response!");
+            toast.error("Vui lòng đợi mô hình hoàn thành phản hồi!");
           } else {
             submitForm();
           }
@@ -371,7 +371,7 @@ function PureMultimodalInput({
             maxHeight={200}
             minHeight={44}
             onChange={handleInput}
-            placeholder="Send a message..."
+            placeholder="Gửi tin nhắn..."
             ref={textareaRef}
             rows={1}
             value={input}
@@ -494,7 +494,7 @@ function PureModelSelectorCompact({
         </Button>
       </ModelSelectorTrigger>
       <ModelSelectorContent>
-        <ModelSelectorInput placeholder="Search models..." />
+        <ModelSelectorInput placeholder="Tìm kiếm mô hình..." />
         <ModelSelectorList>
           {Object.entries(modelsByProvider).map(
             ([providerKey, providerModels]) => (

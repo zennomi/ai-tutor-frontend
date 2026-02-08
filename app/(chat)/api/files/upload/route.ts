@@ -9,11 +9,11 @@ const FileSchema = z.object({
   file: z
     .instanceof(Blob)
     .refine((file) => file.size <= 5 * 1024 * 1024, {
-      message: "File size should be less than 5MB",
+      message: "Kích thước tệp phải nhỏ hơn 5MB",
     })
     // Update the file type based on the kind of files you want to accept
     .refine((file) => ["image/jpeg", "image/png"].includes(file.type), {
-      message: "File type should be JPEG or PNG",
+      message: "Tệp phải có định dạng JPEG hoặc PNG",
     }),
 });
 
@@ -50,11 +50,11 @@ export async function POST(request: Request) {
   const session = await auth();
 
   if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: "Chưa xác thực" }, { status: 401 });
   }
 
   if (request.body === null) {
-    return new Response("Request body is empty", { status: 400 });
+    return new Response("Nội dung yêu cầu trống", { status: 400 });
   }
 
   try {
@@ -62,7 +62,7 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error(error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Missing env vars" },
+      { error: error instanceof Error ? error.message : "Thiếu biến môi trường" },
       { status: 500 }
     );
   }
@@ -72,7 +72,7 @@ export async function POST(request: Request) {
     const file = formData.get("file") as Blob;
 
     if (!file) {
-      return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
+      return NextResponse.json({ error: "Không có tệp nào được tải lên" }, { status: 400 });
     }
 
     const validatedFile = FileSchema.safeParse({ file });
@@ -111,12 +111,12 @@ export async function POST(request: Request) {
       });
     } catch (_error) {
       console.error(_error);
-      return NextResponse.json({ error: "Upload failed" }, { status: 500 });
+      return NextResponse.json({ error: "Tải lên thất bại" }, { status: 500 });
     }
   } catch (_error) {
     console.error(_error);
     return NextResponse.json(
-      { error: "Failed to process request" },
+      { error: "Xử lý yêu cầu thất bại" },
       { status: 500 }
     );
   }

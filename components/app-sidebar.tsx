@@ -72,7 +72,7 @@ export function AppSidebar({ user }: { user: User | undefined }) {
                 }}
               >
                 <span className="cursor-pointer rounded-md px-2 font-semibold text-lg hover:bg-muted">
-                  Chatbot
+                  Trợ giảng AI
                 </span>
               </Link>
               <div className="flex flex-row gap-1">
@@ -89,7 +89,7 @@ export function AppSidebar({ user }: { user: User | undefined }) {
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent align="end" className="hidden md:block">
-                      Delete All Chats
+                      Xóa tất cả cuộc trò chuyện
                     </TooltipContent>
                   </Tooltip>
                 )}
@@ -109,7 +109,7 @@ export function AppSidebar({ user }: { user: User | undefined }) {
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent align="end" className="hidden md:block">
-                    New Chat
+                    Cuộc trò chuyện mới
                   </TooltipContent>
                 </Tooltip>
               </div>
@@ -128,16 +128,16 @@ export function AppSidebar({ user }: { user: User | undefined }) {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete all chats?</AlertDialogTitle>
+            <AlertDialogTitle>Xóa tất cả cuộc trò chuyện?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete all
-              your chats and remove them from our servers.
+              Hành động này không thể hoàn tác. Điều này sẽ xóa tất cả các cuộc
+              trò chuyện và xóa chúng khỏi máy chủ của chúng tôi.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>Hủy</AlertDialogCancel>
             <AlertDialogAction onClick={handleDeleteAll}>
-              Delete All
+              Xóa tất cả
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
