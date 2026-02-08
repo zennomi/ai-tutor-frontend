@@ -11,6 +11,32 @@
 @plugin "tailwindcss-animate";
 @plugin "@tailwindcss/typography";
 
+/* define custom fonts */
+@font-face {
+  font-family: 'LMRoman10';
+  font-style: normal;
+  font-weight: 400;
+  src: url('/fonts/lmroman10-regular.woff') format('woff');
+}
+@font-face {
+  font-family: 'LMRoman10';
+  font-style: italic;
+  font-weight: 400;
+  src: url('/fonts/lmroman10-italic.woff') format('woff');
+}
+@font-face {
+  font-family: 'LMRoman10';
+  font-style: normal;
+  font-weight: 700;
+  src: url('/fonts/lmroman10-bold.woff') format('woff');
+}
+@font-face {
+  font-family: 'LMRoman10';
+  font-style: italic;
+  font-weight: 700;
+  src: url('/fonts/lmroman10-bolditalic.woff') format('woff');
+}
+
 /* define design tokens (light mode) */
 :root {
   --background: hsl(0 0% 100%);
@@ -89,8 +115,8 @@
 
 /* define theme */
 @theme {
-  --font-sans: var(--font-geist);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: 'LMRoman10', serif;
+  --font-mono: var(--font-roboto-mono);
 
   --breakpoint-toast-mobile: 600px;
 
@@ -194,11 +220,11 @@
 
 @layer base {
   * {
-    @apply border-border;
+    @apply border-border outline-ring/50;
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans;
     overflow-x: hidden;
     position: relative;
   }
@@ -308,11 +334,3 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
-@layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
-  body {
-    @apply bg-background text-foreground;
-  }
-}

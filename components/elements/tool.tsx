@@ -134,7 +134,7 @@ export const ToolOutput = ({
   return (
     <div className={cn("space-y-2 p-4", className)} {...props}>
       <h4 className="font-medium text-muted-foreground text-xs uppercase tracking-wide">
-        {errorText ? "Error" : "Result"}
+        {errorText ? "Lỗi" : "Kết quả"}
       </h4>
       <div
         className={cn(
@@ -145,7 +145,7 @@ export const ToolOutput = ({
         )}
       >
         {errorText && <div>{errorText}</div>}
-        {output && <div>{output}</div>}
+        {output && <div className="font-mono">{output}</div>}
       </div>
     </div>
   );

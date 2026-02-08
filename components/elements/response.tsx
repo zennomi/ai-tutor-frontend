@@ -74,8 +74,6 @@ export function preprocessLaTeX(content: string): string {
   processedContent = escapeBrackets(processedContent);
   processedContent = escapeMhchem(processedContent);
 
-  console.log(processedContent);
-
   return processedContent;
 }
 
