@@ -6,8 +6,10 @@ import { useRouter } from "next/navigation";
 import type { User } from "next-auth";
 import { signOut, useSession } from "next-auth/react";
 import { useTheme } from "next-themes";
+import { useEffect, useState } from "react";
 import {
   DropdownMenu,
+  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
@@ -18,9 +20,33 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { guestRegex } from "@/lib/constants";
+import {
+  guestRegex,
+  SHOW_TOOL_MESSAGES_COOKIE_NAME,
+} from "@/lib/constants";
 import { LoaderIcon } from "./icons";
 import { toast } from "./toast";
+
+
+function setCookie(name: string, value: string) {
+  const maxAge = 60 * 60 * 24 * 365;
+  // biome-ignore lint/suspicious/noDocumentCookie: needed for client-side cookie setting
+  document.cookie = `${name}=${encodeURIComponent(value)}; path=/; max-age=${maxAge}`;
+}
+
+function getCookie(name: string): string | undefined {
+  const encodedName = `${name}=`;
+  const found = document.cookie
+    .split(";")
+    .map((cookie) => cookie.trim())
+    .find((cookie) => cookie.startsWith(encodedName));
+
+  if (!found) {
+    return undefined;
+  }
+
+  return decodeURIComponent(found.slice(encodedName.length));
+}
 
 export function SidebarUserNav({ user }: { user: User }) {
   const router = useRouter();
@@ -28,6 +54,12 @@ export function SidebarUserNav({ user }: { user: User }) {
   const { setTheme, resolvedTheme } = useTheme();
 
   const isGuest = guestRegex.test(data?.user?.email ?? "");
+  const [showToolMessages, setShowToolMessages] = useState(false);
+
+  useEffect(() => {
+    const value = getCookie(SHOW_TOOL_MESSAGES_COOKIE_NAME);
+    setShowToolMessages(value === "true");
+  }, []);
 
   return (
     <SidebarMenu>
@@ -79,6 +111,21 @@ export function SidebarUserNav({ user }: { user: User }) {
             >
               {`Chuyển sang chế độ ${resolvedTheme === "light" ? "tối" : "sáng"}`}
             </DropdownMenuItem>
+            <DropdownMenuCheckboxItem
+              checked={showToolMessages}
+              data-testid="user-nav-item-show-tool-messages"
+              onCheckedChange={(checked) => {
+                const nextValue = checked === true;
+                setShowToolMessages(nextValue);
+                setCookie(
+                  SHOW_TOOL_MESSAGES_COOKIE_NAME,
+                  nextValue ? "true" : "false"
+                );
+                router.refresh();
+              }}
+            >
+              Hiển thị chi tiết công cụ
+            </DropdownMenuCheckboxItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild data-testid="user-nav-item-auth">
               <button

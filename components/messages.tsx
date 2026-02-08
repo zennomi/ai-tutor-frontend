@@ -18,6 +18,7 @@ type MessagesProps = {
   isReadonly: boolean;
   isArtifactVisible: boolean;
   selectedModelId: string;
+  showToolMessages: boolean;
 };
 
 function PureMessages({
@@ -30,6 +31,7 @@ function PureMessages({
   regenerate,
   isReadonly,
   selectedModelId: _selectedModelId,
+  showToolMessages,
 }: MessagesProps) {
   const {
     containerRef: messagesContainerRef,
@@ -72,6 +74,7 @@ function PureMessages({
                   ? votes.find((vote) => vote.messageId === message.id)
                   : undefined
               }
+              showToolMessages={showToolMessages}
             />
           ))}
 

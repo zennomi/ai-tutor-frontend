@@ -6,6 +6,7 @@ import { auth } from "@/app/(auth)/auth";
 import { Chat } from "@/components/chat";
 import { DataStreamHandler } from "@/components/data-stream-handler";
 import { DEFAULT_CHAT_MODEL } from "@/lib/ai/models";
+import { SHOW_TOOL_MESSAGES_COOKIE_NAME } from "@/lib/constants";
 import { getChatById, getMessagesByChatId } from "@/lib/db/queries";
 import { convertToUIMessages } from "@/lib/utils";
 
@@ -49,6 +50,8 @@ async function ChatPage({ params }: { params: Promise<{ id: string }> }) {
 
   const cookieStore = await cookies();
   const chatModelFromCookie = cookieStore.get("chat-model");
+  const showToolMessagesCookie = cookieStore.get(SHOW_TOOL_MESSAGES_COOKIE_NAME);
+  const showToolMessages = showToolMessagesCookie?.value === "true";
 
   if (!chatModelFromCookie) {
     return (
@@ -60,6 +63,7 @@ async function ChatPage({ params }: { params: Promise<{ id: string }> }) {
           initialMessages={uiMessages}
           initialVisibilityType={chat.visibility}
           isReadonly={session?.user?.id !== chat.userId}
+          showToolMessages={showToolMessages}
         />
         <DataStreamHandler />
       </>
@@ -75,6 +79,7 @@ async function ChatPage({ params }: { params: Promise<{ id: string }> }) {
         initialMessages={uiMessages}
         initialVisibilityType={chat.visibility}
         isReadonly={session?.user?.id !== chat.userId}
+        showToolMessages={showToolMessages}
       />
       <DataStreamHandler />
     </>

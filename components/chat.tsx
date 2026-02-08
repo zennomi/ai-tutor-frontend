@@ -39,6 +39,7 @@ export function Chat({
   initialVisibilityType,
   isReadonly,
   autoResume,
+  showToolMessages,
 }: {
   id: string;
   initialMessages: ChatMessage[];
@@ -46,6 +47,7 @@ export function Chat({
   initialVisibilityType: VisibilityType;
   isReadonly: boolean;
   autoResume: boolean;
+  showToolMessages: boolean;
 }) {
   const router = useRouter();
 
@@ -203,6 +205,7 @@ export function Chat({
           regenerate={regenerate}
           selectedModelId={initialChatModel}
           setMessages={setMessages}
+          showToolMessages={showToolMessages}
           status={status}
           votes={votes}
         />
@@ -242,6 +245,7 @@ export function Chat({
         setAttachments={setAttachments}
         setInput={setInput}
         setMessages={setMessages}
+        showToolMessages={showToolMessages}
         status={status}
         stop={stop}
         votes={votes}

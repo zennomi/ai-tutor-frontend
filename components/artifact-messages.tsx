@@ -18,6 +18,7 @@ type ArtifactMessagesProps = {
   regenerate: UseChatHelpers<ChatMessage>["regenerate"];
   isReadonly: boolean;
   artifactStatus: UIArtifact["status"];
+  showToolMessages: boolean;
 };
 
 function PureArtifactMessages({
@@ -29,6 +30,7 @@ function PureArtifactMessages({
   setMessages,
   regenerate,
   isReadonly,
+  showToolMessages,
 }: ArtifactMessagesProps) {
   const {
     containerRef: messagesContainerRef,
@@ -63,6 +65,7 @@ function PureArtifactMessages({
               ? votes.find((vote) => vote.messageId === message.id)
               : undefined
           }
+          showToolMessages={showToolMessages}
         />
       ))}
 

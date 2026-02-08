@@ -33,6 +33,7 @@ const PurePreviewMessage = ({
   regenerate,
   isReadonly,
   requiresScrollPadding: _requiresScrollPadding,
+  showToolMessages,
 }: {
   addToolApprovalResponse: UseChatHelpers<ChatMessage>["addToolApprovalResponse"];
   chatId: string;
@@ -43,12 +44,31 @@ const PurePreviewMessage = ({
   regenerate: UseChatHelpers<ChatMessage>["regenerate"];
   isReadonly: boolean;
   requiresScrollPadding: boolean;
+  showToolMessages: boolean;
 }) => {
   const [mode, setMode] = useState<"view" | "edit">("view");
 
   const attachmentsFromMessage = message.parts.filter(
     (part) => part.type === "file"
   );
+
+  const hasTextPart =
+    message.parts?.some((part) => part.type === "text" && part.text?.trim()) ?? false;
+  const hasVisibleToolPart =
+    (showToolMessages &&
+      (message.parts?.some((part) => part.type.startsWith("tool-")) ??
+        false)) ||
+    (message.parts?.some(
+      (part) =>
+        part.type.startsWith("tool-") &&
+        (("state" in part &&
+          (part.state === "approval-requested" ||
+            part.state === "input-available" ||
+            part.state === "approval-responded" ||
+            part.state === "output-denied")) ||
+          part.type === "tool-requestSuggestions")
+    ) ??
+      false);
 
   useDataStream();
 
@@ -72,15 +92,10 @@ const PurePreviewMessage = ({
 
         <div
           className={cn("flex flex-col", {
-            "gap-2 md:gap-4": message.parts?.some(
-              (p) => p.type === "text" && p.text?.trim()
-            ),
+            "gap-2 md:gap-4": hasTextPart,
             "w-full":
               (message.role === "assistant" &&
-                (message.parts?.some(
-                  (p) => p.type === "text" && p.text?.trim()
-                ) ||
-                  message.parts?.some((p) => p.type.startsWith("tool-")))) ||
+                (hasTextPart || hasVisibleToolPart)) ||
               mode === "edit",
             "max-w-[calc(100%-2.5rem)] sm:max-w-[min(fit-content,80%)]":
               message.role === "user" && mode !== "edit",
@@ -107,6 +122,18 @@ const PurePreviewMessage = ({
           {message.parts?.map((part, index) => {
             const { type } = part;
             const key = `message-${message.id}-part-${index}`;
+
+            const isInteractive =
+              ("state" in part &&
+                (part.state === "approval-requested" ||
+                  part.state === "input-available" ||
+                  part.state === "approval-responded" ||
+                  part.state === "output-denied")) ||
+              type === "tool-requestSuggestions";
+
+            if (!showToolMessages && type.startsWith("tool-") && !isInteractive) {
+              return null;
+            }
 
             if (type === "reasoning") {
               const hasContent = part.text?.trim().length > 0;

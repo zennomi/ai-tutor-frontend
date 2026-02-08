@@ -69,6 +69,7 @@ function PureArtifact({
   isReadonly,
   selectedVisibilityType,
   selectedModelId,
+  showToolMessages,
 }: {
   addToolApprovalResponse: UseChatHelpers<ChatMessage>["addToolApprovalResponse"];
   chatId: string;
@@ -86,6 +87,7 @@ function PureArtifact({
   isReadonly: boolean;
   selectedVisibilityType: VisibilityType;
   selectedModelId: string;
+  showToolMessages: boolean;
 }) {
   const { artifact, setArtifact, metadata, setMetadata } = useArtifact();
 
@@ -329,6 +331,7 @@ function PureArtifact({
                   messages={messages}
                   regenerate={regenerate}
                   setMessages={setMessages}
+                  showToolMessages={showToolMessages}
                   status={status}
                   votes={votes}
                 />
@@ -525,6 +528,9 @@ export const Artifact = memo(PureArtifact, (prevProps, nextProps) => {
     return false;
   }
   if (prevProps.selectedVisibilityType !== nextProps.selectedVisibilityType) {
+    return false;
+  }
+  if (prevProps.showToolMessages !== nextProps.showToolMessages) {
     return false;
   }
 

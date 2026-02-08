@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { Chat } from "@/components/chat";
 import { DataStreamHandler } from "@/components/data-stream-handler";
 import { DEFAULT_CHAT_MODEL } from "@/lib/ai/models";
+import { SHOW_TOOL_MESSAGES_COOKIE_NAME } from "@/lib/constants";
 import { generateUUID } from "@/lib/utils";
 
 export default function Page() {
@@ -16,6 +17,8 @@ export default function Page() {
 async function NewChatPage() {
   const cookieStore = await cookies();
   const modelIdFromCookie = cookieStore.get("chat-model");
+  const showToolMessagesCookie = cookieStore.get(SHOW_TOOL_MESSAGES_COOKIE_NAME);
+  const showToolMessages = showToolMessagesCookie?.value === "true";
   const id = generateUUID();
 
   if (!modelIdFromCookie) {
@@ -29,6 +32,7 @@ async function NewChatPage() {
           initialVisibilityType="private"
           isReadonly={false}
           key={id}
+          showToolMessages={showToolMessages}
         />
         <DataStreamHandler />
       </>
@@ -45,6 +49,7 @@ async function NewChatPage() {
         initialVisibilityType="private"
         isReadonly={false}
         key={id}
+        showToolMessages={showToolMessages}
       />
       <DataStreamHandler />
     </>
