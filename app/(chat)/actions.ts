@@ -23,7 +23,6 @@ export async function generateTitleFromUserMessage({
   message: UIMessage;
 }) {
   const textMessage = getTextFromMessage(message);
-  console.log("textMessage", { textMessage });
   if (!textMessage.trim()) {
     // assume the message is an image
     return "Phân tích hình ảnh";
