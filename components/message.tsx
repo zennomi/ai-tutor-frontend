@@ -1,5 +1,6 @@
 "use client";
 import type { UseChatHelpers } from "@ai-sdk/react";
+import Image from "next/image";
 import { useState } from "react";
 import type { Vote } from "@/lib/db/schema";
 import type { ChatMessage } from "@/lib/types";
@@ -21,6 +22,7 @@ import { MessageActions } from "./message-actions";
 import { MessageEditor } from "./message-editor";
 import { MessageReasoning } from "./message-reasoning";
 import { PreviewAttachment } from "./preview-attachment";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 import { Weather } from "./weather";
 
 const PurePreviewMessage = ({
@@ -47,13 +49,19 @@ const PurePreviewMessage = ({
   showToolMessages: boolean;
 }) => {
   const [mode, setMode] = useState<"view" | "edit">("view");
+  const [previewAttachment, setPreviewAttachment] = useState<{
+    url: string;
+    name: string;
+    contentType?: string;
+  } | null>(null);
 
   const attachmentsFromMessage = message.parts.filter(
     (part) => part.type === "file"
   );
 
   const hasTextPart =
-    message.parts?.some((part) => part.type === "text" && part.text?.trim()) ?? false;
+    message.parts?.some((part) => part.type === "text" && part.text?.trim()) ??
+    false;
   const hasVisibleToolPart =
     (showToolMessages &&
       (message.parts?.some((part) => part.type.startsWith("tool-")) ??
@@ -114,10 +122,58 @@ const PurePreviewMessage = ({
                     url: attachment.url,
                   }}
                   key={attachment.url}
+                  onPreview={(att) => {
+                    setPreviewAttachment({
+                      url: att.url,
+                      name: att.name ?? "Attachment",
+                      contentType: att.contentType,
+                    });
+                  }}
                 />
               ))}
             </div>
           )}
+
+          <Dialog
+            onOpenChange={(open) => !open && setPreviewAttachment(null)}
+            open={!!previewAttachment}
+          >
+            <DialogContent className="max-w-3xl overflow-hidden p-0">
+              <DialogHeader className="p-4 border-b">
+                <DialogTitle className="truncate pr-8">
+                  {previewAttachment?.name}
+                </DialogTitle>
+              </DialogHeader>
+              <div className="flex items-center justify-center bg-muted/20 p-4 min-h-[200px]">
+                {previewAttachment?.contentType?.startsWith("image") ? (
+                  <div className="relative w-full h-[60vh]">
+                    <Image
+                      alt={previewAttachment.name}
+                      className="object-contain"
+                      fill
+                      priority
+                      src={previewAttachment.url}
+                      unoptimized
+                    />
+                  </div>
+                ) : (
+                  <div className="text-center space-y-4">
+                    <p className="text-muted-foreground">
+                      Không thể xem trước tệp tin này
+                    </p>
+                    <a
+                      className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+                      href={previewAttachment?.url}
+                      rel="noopener noreferrer"
+                      target="_blank"
+                    >
+                      Tải xuống / Mở trong tab mới
+                    </a>
+                  </div>
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
 
           {message.parts?.map((part, index) => {
             const { type } = part;
@@ -131,7 +187,11 @@ const PurePreviewMessage = ({
                   part.state === "output-denied")) ||
               type === "tool-requestSuggestions";
 
-            if (!showToolMessages && type.startsWith("tool-") && !isInteractive) {
+            if (
+              !showToolMessages &&
+              type.startsWith("tool-") &&
+              !isInteractive
+            ) {
               return null;
             }
 
@@ -266,7 +326,7 @@ const PurePreviewMessage = ({
                             }}
                             type="button"
                           >
-                          Từ chối
+                            Từ chối
                           </button>
                           <button
                             className="rounded-md bg-primary px-3 py-1.5 text-primary-foreground text-sm transition-colors hover:bg-primary/90"
@@ -278,7 +338,7 @@ const PurePreviewMessage = ({
                             }}
                             type="button"
                           >
-                          Cho phép
+                            Cho phép
                           </button>
                         </div>
                       )}

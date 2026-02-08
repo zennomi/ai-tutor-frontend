@@ -8,18 +8,23 @@ export const PreviewAttachment = ({
   attachment,
   isUploading = false,
   onRemove,
+  onPreview,
 }: {
   attachment: Attachment;
   isUploading?: boolean;
   onRemove?: () => void;
+  onPreview?: (attachment: Attachment) => void;
 }) => {
   const { name, url, contentType } = attachment;
 
-  return (
-    <div
-      className="group relative size-16 overflow-hidden rounded-lg border bg-muted"
-      data-testid="input-attachment-preview"
-    >
+  const handlePreview = () => {
+    if (onPreview && !isUploading) {
+      onPreview(attachment);
+    }
+  };
+
+  const content = (
+    <>
       {contentType?.startsWith("image") ? (
         <Image
           alt={name ?? "An image attachment"}
@@ -46,7 +51,10 @@ export const PreviewAttachment = ({
       {onRemove && !isUploading && (
         <Button
           className="absolute top-0.5 right-0.5 size-4 rounded-full p-0 opacity-0 transition-opacity group-hover:opacity-100"
-          onClick={onRemove}
+          onClick={(e) => {
+            e.stopPropagation();
+            onRemove();
+          }}
           size="sm"
           variant="destructive"
         >
@@ -57,6 +65,35 @@ export const PreviewAttachment = ({
       <div className="absolute inset-x-0 bottom-0 truncate bg-linear-to-t from-black/80 to-transparent px-1 py-0.5 text-[10px] text-white">
         {name}
       </div>
+    </>
+  );
+
+  const className = `group relative size-16 overflow-hidden rounded-lg border bg-muted ${
+    onPreview ? "cursor-pointer transition-transform hover:scale-105" : ""
+  }`;
+
+  if (onPreview) {
+    return (
+      <button
+        className={className}
+        data-testid="input-attachment-preview"
+        onClick={handlePreview}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            handlePreview();
+          }
+        }}
+        type="button"
+      >
+        {content}
+      </button>
+    );
+  }
+
+  return (
+    <div className={className} data-testid="input-attachment-preview">
+      {content}
     </div>
   );
 };
