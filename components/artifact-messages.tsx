@@ -60,12 +60,12 @@ function PureArtifactMessages({
             hasSentMessage && index === messages.length - 1
           }
           setMessages={setMessages}
+          showToolMessages={showToolMessages}
           vote={
             votes
               ? votes.find((vote) => vote.messageId === message.id)
               : undefined
           }
-          showToolMessages={showToolMessages}
         />
       ))}
 
