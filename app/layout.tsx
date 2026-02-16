@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Roboto_Mono } from "next/font/google";
+import { Be_Vietnam_Pro, Roboto_Mono } from "next/font/google";
 import { Toaster } from "sonner";
 import { ThemeProvider } from "@/components/theme-provider";
 
@@ -15,6 +15,13 @@ export const metadata: Metadata = {
 export const viewport = {
   maximumScale: 1, // Disable auto-zoom on mobile Safari
 };
+
+const beVietnamPro = Be_Vietnam_Pro({
+  subsets: ["latin", "vietnamese"],
+  display: "swap",
+  variable: "--font-be-vietnam-pro",
+  weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
+});
 
 const robotoMono = Roboto_Mono({
   subsets: ["latin"],
@@ -49,7 +56,7 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      className={`${robotoMono.variable}`}
+      className={`${beVietnamPro.variable} ${robotoMono.variable}`}
       // `next-themes` injects an extra classname to the body element to avoid
       // visual flicker before hydration. Hence the `suppressHydrationWarning`
       // prop is necessary to avoid the React hydration mismatch warning.

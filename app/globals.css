@@ -115,8 +115,9 @@
 
 /* define theme */
 @theme {
-  --font-sans: 'LMRoman10', serif;
+  --font-sans: var(--font-be-vietnam-pro), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-roboto-mono);
+  --font-prose: "LMRoman10", Georgia, serif;
 
   --breakpoint-toast-mobile: 600px;
 
