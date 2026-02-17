@@ -132,8 +132,18 @@ export default function TestGeneratorPage() {
     resumeMode?: ResumeMode;
     resumeData?: ResumeSnapshot;
   } = {}) => {
-    if (!file) {
-      toast({ type: "error", description: "Bạn cần chọn một tệp DOCX trước." });
+    const effectiveResumeData = resumeStep
+      ? (resumeData ?? useTestGeneratorStore.getState().resumeSnapshot)
+      : undefined;
+
+    const requiresSourceFile =
+      !resumeStep || resumeStep === "convert" || !effectiveResumeData?.markdown;
+
+    if (requiresSourceFile && !file) {
+      toast({
+        type: "error",
+        description: "Bạn cần chọn lại tệp DOCX để chạy từ bước này.",
+      });
       return;
     }
 
@@ -150,7 +160,11 @@ export default function TestGeneratorPage() {
 
     try {
       const formData = new FormData();
-      formData.append("file", file);
+
+      if (file) {
+        formData.append("file", file);
+      }
+
       formData.append("title", title.trim() || TEST_GENERATOR_DEFAULT_TITLE);
       formData.append("locale", locale);
       formData.append("includeSolutions", String(options.includeSolutions));
@@ -164,10 +178,6 @@ export default function TestGeneratorPage() {
       if (resumeMode) {
         formData.append("resumeMode", resumeMode);
       }
-
-      const effectiveResumeData = resumeStep
-        ? (resumeData ?? useTestGeneratorStore.getState().resumeSnapshot)
-        : undefined;
 
       if (effectiveResumeData) {
         formData.append("resumeData", JSON.stringify(effectiveResumeData));
@@ -279,6 +289,17 @@ export default function TestGeneratorPage() {
     await runPipeline();
   };
 
+  const handleRetryFromStep = async (step: TestGeneratorPipelineStep) => {
+    const snapshot =
+      step === "generate" ? captureResumeSnapshot(0) : captureResumeSnapshot();
+
+    await runPipeline({
+      resumeStep: step,
+      resumeMode: "retry",
+      resumeData: snapshot,
+    });
+  };
+
   const handleRetryFailedStep = async () => {
     if (!failedStep) {
       return;
@@ -351,6 +372,26 @@ export default function TestGeneratorPage() {
     return "pending" as const;
   };
 
+  const canRetryFromStep = (step: TestGeneratorPipelineStep) => {
+    if (isRunning) {
+      return false;
+    }
+
+    if (file) {
+      return true;
+    }
+
+    if (!markdownPreview || step === "convert") {
+      return false;
+    }
+
+    if (step === "export") {
+      return generatedItems.length > 0;
+    }
+
+    return true;
+  };
+
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 p-4 md:p-6">
       <TestGeneratorHero
@@ -388,9 +429,11 @@ export default function TestGeneratorPage() {
 
         <div className="flex flex-col gap-4">
           <TestGeneratorPipelineCard
+            canRetryFromStep={canRetryFromStep}
             currentStep={currentStep}
             getPipelineStepStatus={getPipelineStepStatus}
             isRunning={isRunning}
+            onRetryFromStep={handleRetryFromStep}
             progress={progress}
             statusMessage={statusMessage}
             stepActionLabel={TEST_GENERATOR_STEP_ACTION_LABEL}

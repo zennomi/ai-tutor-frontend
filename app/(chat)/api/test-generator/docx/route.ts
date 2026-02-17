@@ -140,48 +140,20 @@ export async function POST(request: Request) {
 
   const fileEntry = formData.get("file");
 
-  if (!(fileEntry instanceof File)) {
+  if (fileEntry !== null && !(fileEntry instanceof File)) {
     return new ChatSDKError(
       "bad_request:api",
-      "Field file is required"
+      "Field file must be a file"
     ).toResponse();
   }
 
-  const file = fileEntry;
-
-  if (!file.name.toLowerCase().endsWith(".docx")) {
-    return new ChatSDKError(
-      "bad_request:api",
-      "Only .docx files are supported"
-    ).toResponse();
-  }
-
-  if (!DOCX_MIME_TYPES.has(file.type)) {
-    return new ChatSDKError(
-      "bad_request:api",
-      "Unsupported file content type"
-    ).toResponse();
-  }
-
-  if (file.size <= 0) {
-    return new ChatSDKError(
-      "bad_request:api",
-      "Uploaded file is empty"
-    ).toResponse();
-  }
-
-  if (file.size > MAX_DOCX_SIZE_BYTES) {
-    return new ChatSDKError(
-      "bad_request:api",
-      "File size exceeds maximum 20MB"
-    ).toResponse();
-  }
+  const file = fileEntry instanceof File ? fileEntry : undefined;
 
   const rawTitle = formData.get("title");
   const title =
     typeof rawTitle === "string" && rawTitle.trim().length > 0
       ? rawTitle.trim()
-      : getDefaultTitle(file.name);
+      : getDefaultTitle(file?.name ?? "");
 
   const localeEntry = formData.get("locale");
   const locale =
@@ -235,6 +207,45 @@ export async function POST(request: Request) {
     }
 
     resumeData = parsedResumeData.data;
+  }
+
+  const requiresFile = !resumeStep || resumeStep === "convert";
+
+  if (requiresFile && !file) {
+    return new ChatSDKError(
+      "bad_request:api",
+      "Field file is required"
+    ).toResponse();
+  }
+
+  if (file) {
+    if (!file.name.toLowerCase().endsWith(".docx")) {
+      return new ChatSDKError(
+        "bad_request:api",
+        "Only .docx files are supported"
+      ).toResponse();
+    }
+
+    if (!DOCX_MIME_TYPES.has(file.type)) {
+      return new ChatSDKError(
+        "bad_request:api",
+        "Unsupported file content type"
+      ).toResponse();
+    }
+
+    if (file.size <= 0) {
+      return new ChatSDKError(
+        "bad_request:api",
+        "Uploaded file is empty"
+      ).toResponse();
+    }
+
+    if (file.size > MAX_DOCX_SIZE_BYTES) {
+      return new ChatSDKError(
+        "bad_request:api",
+        "File size exceeds maximum 20MB"
+      ).toResponse();
+    }
   }
 
   const responseStream = new ReadableStream({
@@ -291,6 +302,10 @@ export async function POST(request: Request) {
         let markdown = resumeData?.markdown;
 
         if (shouldRunStep("convert") || !markdown) {
+          if (!file) {
+            throw new Error("Missing DOCX file for convert step");
+          }
+
           writeStep("convert", "Đang chuyển DOCX sang markdown...", 5);
 
           const converted = await convertDocxToMarkdown(file);
@@ -467,7 +482,7 @@ export async function POST(request: Request) {
           questions: generatedQuestions,
           options: hasAnyOption ? options : undefined,
           source: {
-            filename: file.name,
+            filename: file?.name,
             markdown,
           },
         });
@@ -486,8 +501,8 @@ export async function POST(request: Request) {
 
         console.error("test-generator pipeline failed", {
           userId: session.user.id,
-          fileName: file.name,
-          fileSize: file.size,
+          fileName: file?.name,
+          fileSize: file?.size,
           failedStep,
           failedGenerateIndex,
           error,

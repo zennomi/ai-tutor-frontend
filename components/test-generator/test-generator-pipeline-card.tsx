@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { CheckCircleFillIcon } from "@/components/icons";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -29,6 +30,8 @@ type TestGeneratorPipelineCardProps = {
   stepOrder: TestGeneratorPipelineStep[];
   stepLabel: Record<"idle" | TestGeneratorPipelineStep, string>;
   stepActionLabel: Record<TestGeneratorPipelineStep, string>;
+  canRetryFromStep: (step: TestGeneratorPipelineStep) => boolean;
+  onRetryFromStep: (step: TestGeneratorPipelineStep) => void;
   getPipelineStepStatus: (
     step: TestGeneratorPipelineStep
   ) => PipelineStepStatus;
@@ -65,6 +68,8 @@ export function TestGeneratorPipelineCard({
   stepOrder,
   stepLabel,
   stepActionLabel,
+  canRetryFromStep,
+  onRetryFromStep,
   getPipelineStepStatus,
 }: TestGeneratorPipelineCardProps) {
   return (
@@ -145,16 +150,28 @@ export function TestGeneratorPipelineCard({
                   </p>
                 </div>
 
-                <Badge
-                  className={cn(
-                    "gap-1.5 border text-[11px]",
-                    statusMeta.className
-                  )}
-                  variant="secondary"
-                >
-                  {statusMeta.icon}
-                  {statusMeta.label}
-                </Badge>
+                <div className="flex shrink-0 items-center gap-2">
+                  <Button
+                    disabled={!canRetryFromStep(step)}
+                    onClick={() => onRetryFromStep(step)}
+                    size="sm"
+                    type="button"
+                    variant="outline"
+                  >
+                    Retry bước này
+                  </Button>
+
+                  <Badge
+                    className={cn(
+                      "gap-1.5 border text-[11px]",
+                      statusMeta.className
+                    )}
+                    variant="secondary"
+                  >
+                    {statusMeta.icon}
+                    {statusMeta.label}
+                  </Badge>
+                </div>
               </div>
             </div>
           );
