@@ -50,7 +50,9 @@ async function ChatPage({ params }: { params: Promise<{ id: string }> }) {
 
   const cookieStore = await cookies();
   const chatModelFromCookie = cookieStore.get("chat-model");
-  const showToolMessagesCookie = cookieStore.get(SHOW_TOOL_MESSAGES_COOKIE_NAME);
+  const showToolMessagesCookie = cookieStore.get(
+    SHOW_TOOL_MESSAGES_COOKIE_NAME
+  );
   const showToolMessages = showToolMessagesCookie?.value === "true";
 
   if (!chatModelFromCookie) {

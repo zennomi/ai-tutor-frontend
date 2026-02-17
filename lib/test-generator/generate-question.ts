@@ -46,9 +46,8 @@ export async function generateQuestionWithToolLoop({
   const partialTask = onPartial
     ? (async () => {
         for await (const partialOutput of result.partialOutputStream) {
-          const parsedPartial = generatedQuestionPartialSchema.safeParse(
-            partialOutput
-          );
+          const parsedPartial =
+            generatedQuestionPartialSchema.safeParse(partialOutput);
 
           if (!parsedPartial.success) {
             continue;

@@ -20,13 +20,9 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import {
-  guestRegex,
-  SHOW_TOOL_MESSAGES_COOKIE_NAME,
-} from "@/lib/constants";
+import { guestRegex, SHOW_TOOL_MESSAGES_COOKIE_NAME } from "@/lib/constants";
 import { LoaderIcon } from "./icons";
 import { toast } from "./toast";
-
 
 function setCookie(name: string, value: string) {
   const maxAge = 60 * 60 * 24 * 365;

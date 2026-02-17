@@ -62,7 +62,9 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error(error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Thiếu biến môi trường" },
+      {
+        error: error instanceof Error ? error.message : "Thiếu biến môi trường",
+      },
       { status: 500 }
     );
   }
@@ -72,7 +74,10 @@ export async function POST(request: Request) {
     const file = formData.get("file") as Blob;
 
     if (!file) {
-      return NextResponse.json({ error: "Không có tệp nào được tải lên" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Không có tệp nào được tải lên" },
+        { status: 400 }
+      );
     }
 
     const validatedFile = FileSchema.safeParse({ file });

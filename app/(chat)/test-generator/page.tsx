@@ -2,6 +2,12 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "@/components/toast";
+import {
+  TEST_GENERATOR_DEFAULT_TITLE,
+  TEST_GENERATOR_STEP_ACTION_LABEL,
+  TEST_GENERATOR_STEP_LABEL,
+  TEST_GENERATOR_STEP_ORDER,
+} from "@/lib/constants";
 import type {
   ExtractedQuestion,
   GeneratedDocxResult,
@@ -9,65 +15,21 @@ import type {
   TestGeneratorPipelineStep,
   TestGeneratorStreamEvent,
 } from "@/lib/test-generator/schemas";
-import type { Attachment } from "@/lib/types";
-import { TestGeneratorHero } from "./components/test-generator-hero";
-import { TestGeneratorPipelineCard } from "./components/test-generator-pipeline-card";
-import { TestGeneratorPreviewCard } from "./components/test-generator-preview-card";
-import { TestGeneratorSetupCard } from "./components/test-generator-setup-card";
-
-type StepKey =
-  | "idle"
-  | "convert"
-  | "extract"
-  | "curriculum"
-  | "generate"
-  | "export";
-
-const stepLabel: Record<StepKey, string> = {
-  idle: "Sẵn sàng",
-  convert: "Chuyển DOCX → Markdown",
-  extract: "Trích xuất câu hỏi",
-  curriculum: "Tải curriculum metadata",
-  generate: "Tạo câu hỏi mới",
-  export: "Xuất DOCX",
-};
-
-const defaultTitle = "Đề kiểm tra mới";
-
-const stepOrder: TestGeneratorPipelineStep[] = [
-  "convert",
-  "extract",
-  "curriculum",
-  "generate",
-  "export",
-];
-
-const stepActionLabel: Record<TestGeneratorPipelineStep, string> = {
-  convert: "Đọc DOCX",
-  extract: "Trích câu hỏi",
-  curriculum: "Đối chiếu curriculum",
-  generate: "Tái sinh câu hỏi",
-  export: "Xuất DOCX",
-};
-
-type GenerationOptions = {
-  includeSolutions: boolean;
-  shuffleQuestions: boolean;
-  shuffleChoices: boolean;
-};
-
-type ResumeMode = "retry" | "continue";
-
-type ResumeSnapshot = {
-  markdown?: string;
-  extractedItems?: ExtractedQuestion[];
-  generatedQuestions?: GeneratedQuestion[];
-  failedGenerateIndex?: number;
-};
+import type {
+  Attachment,
+  GenerationOptions,
+  ResumeMode,
+  ResumeSnapshot,
+  TestGeneratorStepKey,
+} from "@/lib/types";
+import { TestGeneratorHero } from "../../../components/test-generator/test-generator-hero";
+import { TestGeneratorPipelineCard } from "../../../components/test-generator/test-generator-pipeline-card";
+import { TestGeneratorPreviewCard } from "../../../components/test-generator/test-generator-preview-card";
+import { TestGeneratorSetupCard } from "../../../components/test-generator/test-generator-setup-card";
 
 export default function TestGeneratorPage() {
   const [file, setFile] = useState<File | null>(null);
-  const [title, setTitle] = useState(defaultTitle);
+  const [title, setTitle] = useState(TEST_GENERATOR_DEFAULT_TITLE);
   const [locale, setLocale] = useState<"vi" | "en">("vi");
   const [options, setOptions] = useState<GenerationOptions>({
     includeSolutions: true,
@@ -78,7 +40,7 @@ export default function TestGeneratorPage() {
   const [statusMessage, setStatusMessage] = useState(
     "Sẵn sàng tạo đề kiểm tra mới"
   );
-  const [currentStep, setCurrentStep] = useState<StepKey>("idle");
+  const [currentStep, setCurrentStep] = useState<TestGeneratorStepKey>("idle");
   const [progress, setProgress] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
 
@@ -174,8 +136,10 @@ export default function TestGeneratorPage() {
     }
 
     setFile(nextFile);
-    if (title === defaultTitle) {
-      setTitle(nextFile.name.replace(/\.docx$/i, "") || defaultTitle);
+    if (title === TEST_GENERATOR_DEFAULT_TITLE) {
+      setTitle(
+        nextFile.name.replace(/\.docx$/i, "") || TEST_GENERATOR_DEFAULT_TITLE
+      );
     }
   };
 
@@ -320,7 +284,7 @@ export default function TestGeneratorPage() {
     try {
       const formData = new FormData();
       formData.append("file", file);
-      formData.append("title", title.trim() || defaultTitle);
+      formData.append("title", title.trim() || TEST_GENERATOR_DEFAULT_TITLE);
       formData.append("locale", locale);
       formData.append("includeSolutions", String(options.includeSolutions));
       formData.append("shuffleQuestions", String(options.shuffleQuestions));
@@ -477,8 +441,10 @@ export default function TestGeneratorPage() {
     }
 
     const currentIndex =
-      currentStep === "idle" ? -1 : stepOrder.indexOf(currentStep);
-    const stepIndex = stepOrder.indexOf(step);
+      currentStep === "idle"
+        ? -1
+        : TEST_GENERATOR_STEP_ORDER.indexOf(currentStep);
+    const stepIndex = TEST_GENERATOR_STEP_ORDER.indexOf(step);
 
     if (stepIndex < currentIndex) {
       return "completed" as const;
@@ -495,7 +461,7 @@ export default function TestGeneratorPage() {
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 p-4 md:p-6">
       <TestGeneratorHero
         getPipelineStepStatus={getPipelineStepStatus}
-        stepOrder={stepOrder}
+        stepOrder={TEST_GENERATOR_STEP_ORDER}
       />
 
       <div className="grid gap-4 lg:grid-cols-[1.05fr_0.95fr]">
@@ -534,7 +500,7 @@ export default function TestGeneratorPage() {
           }
           onTitleChange={setTitle}
           options={options}
-          stepLabel={stepLabel}
+          stepLabel={TEST_GENERATOR_STEP_LABEL}
           title={title}
         />
 
@@ -545,9 +511,9 @@ export default function TestGeneratorPage() {
             isRunning={isRunning}
             progress={progress}
             statusMessage={statusMessage}
-            stepActionLabel={stepActionLabel}
-            stepLabel={stepLabel}
-            stepOrder={stepOrder}
+            stepActionLabel={TEST_GENERATOR_STEP_ACTION_LABEL}
+            stepLabel={TEST_GENERATOR_STEP_LABEL}
+            stepOrder={TEST_GENERATOR_STEP_ORDER}
           />
 
           <TestGeneratorPreviewCard

@@ -13,28 +13,28 @@
 
 /* define custom fonts */
 @font-face {
-  font-family: 'LMRoman10';
+  font-family: "LMRoman10";
   font-style: normal;
   font-weight: 400;
-  src: url('/fonts/lmroman10-regular.woff') format('woff');
+  src: url("/fonts/lmroman10-regular.woff") format("woff");
 }
 @font-face {
-  font-family: 'LMRoman10';
+  font-family: "LMRoman10";
   font-style: italic;
   font-weight: 400;
-  src: url('/fonts/lmroman10-italic.woff') format('woff');
+  src: url("/fonts/lmroman10-italic.woff") format("woff");
 }
 @font-face {
-  font-family: 'LMRoman10';
+  font-family: "LMRoman10";
   font-style: normal;
   font-weight: 700;
-  src: url('/fonts/lmroman10-bold.woff') format('woff');
+  src: url("/fonts/lmroman10-bold.woff") format("woff");
 }
 @font-face {
-  font-family: 'LMRoman10';
+  font-family: "LMRoman10";
   font-style: italic;
   font-weight: 700;
-  src: url('/fonts/lmroman10-bolditalic.woff') format('woff');
+  src: url("/fonts/lmroman10-bolditalic.woff") format("woff");
 }
 
 /* define design tokens (light mode) */
@@ -334,4 +334,3 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 }
-

@@ -1,13 +1,13 @@
 import type { InferUITool, UIMessage } from "ai";
 import { z } from "zod";
 import type { ArtifactKind } from "@/components/artifact";
-import type { createDocument } from "./ai/tools/create-document";
-import type { getWeather } from "./ai/tools/get-weather";
-import type { requestSuggestions } from "./ai/tools/request-suggestions";
-import type { searchExercise } from "./ai/tools/search-exercise";
-import type { searchKnowledgeBase } from "./ai/tools/search-knowledge-base";
-import type { updateDocument } from "./ai/tools/update-document";
-import type { Suggestion } from "./db/schema";
+import type { createDocument } from "../ai/tools/create-document";
+import type { getWeather } from "../ai/tools/get-weather";
+import type { requestSuggestions } from "../ai/tools/request-suggestions";
+import type { searchExercise } from "../ai/tools/search-exercise";
+import type { searchKnowledgeBase } from "../ai/tools/search-knowledge-base";
+import type { updateDocument } from "../ai/tools/update-document";
+import type { Suggestion } from "../db/schema";
 
 export type DataPart = { type: "append-message"; message: string };
 
@@ -55,9 +55,3 @@ export type ChatMessage = UIMessage<
   CustomUIDataTypes,
   ChatTools
 >;
-
-export type Attachment = {
-  name: string;
-  url: string;
-  contentType: string;
-};
