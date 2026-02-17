@@ -12,6 +12,9 @@ export const TEST_GENERATOR_STEP_LABEL: Record<TestGeneratorStepKey, string> = {
 
 export const TEST_GENERATOR_DEFAULT_TITLE = "Đề kiểm tra mới";
 
+export const TEST_GENERATOR_PERSISTED_STATE_KEY = "test-generator-state-v1";
+export const TEST_GENERATOR_PERSISTED_STATE_VERSION = 1;
+
 export const TEST_GENERATOR_STEP_ORDER: TestGeneratorPipelineStep[] = [
   "convert",
   "extract",

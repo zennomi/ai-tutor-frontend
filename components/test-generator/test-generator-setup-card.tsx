@@ -5,6 +5,7 @@ import {
   DownloadIcon,
   RotateCcwIcon,
   SkipForwardIcon,
+  Trash2Icon,
   WrenchIcon,
   XCircleIcon,
 } from "lucide-react";
@@ -32,13 +33,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { TestGeneratorPipelineStep } from "@/lib/test-generator/schemas";
-import type { Attachment } from "@/lib/types";
-
-type GenerationOptions = {
-  includeSolutions: boolean;
-  shuffleQuestions: boolean;
-  shuffleChoices: boolean;
-};
+import type { Attachment, GenerationOptions } from "@/lib/types";
 
 type TestGeneratorSetupCardProps = {
   file: File | null;
@@ -62,6 +57,7 @@ type TestGeneratorSetupCardProps = {
   onCancel: () => void;
   onRetryFailedStep: () => void;
   onContinueAfterFailure: () => void;
+  onClearSavedState: () => void;
 };
 
 export function TestGeneratorSetupCard({
@@ -86,6 +82,7 @@ export function TestGeneratorSetupCard({
   onCancel,
   onRetryFailedStep,
   onContinueAfterFailure,
+  onClearSavedState,
 }: TestGeneratorSetupCardProps) {
   return (
     <Card className="border-primary/20 shadow-sm">
@@ -288,7 +285,7 @@ export function TestGeneratorSetupCard({
                 <a
                   download={generatedFilename}
                   href={downloadUrl}
-                  rel="noreferrer"
+                  rel="noopener noreferrer"
                   target="_blank"
                 >
                   <DownloadIcon className="size-4" />
@@ -296,6 +293,16 @@ export function TestGeneratorSetupCard({
                 </a>
               </Button>
             )}
+
+            <Button
+              disabled={isRunning}
+              onClick={onClearSavedState}
+              type="button"
+              variant="ghost"
+            >
+              <Trash2Icon className="size-4" />
+              Xóa dữ liệu đã lưu
+            </Button>
           </div>
 
           {failedStep && (

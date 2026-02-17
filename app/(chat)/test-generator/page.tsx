@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { type ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "@/components/toast";
 import {
   TEST_GENERATOR_DEFAULT_TITLE,
@@ -9,58 +9,47 @@ import {
   TEST_GENERATOR_STEP_ORDER,
 } from "@/lib/constants";
 import type {
-  ExtractedQuestion,
-  GeneratedDocxResult,
-  GeneratedQuestion,
   TestGeneratorPipelineStep,
   TestGeneratorStreamEvent,
 } from "@/lib/test-generator/schemas";
-import type {
-  Attachment,
-  GenerationOptions,
-  ResumeMode,
-  ResumeSnapshot,
-  TestGeneratorStepKey,
-} from "@/lib/types";
+import { useTestGeneratorStore } from "@/lib/test-generator/store";
+import type { Attachment, ResumeMode, ResumeSnapshot } from "@/lib/types";
 import { TestGeneratorHero } from "../../../components/test-generator/test-generator-hero";
 import { TestGeneratorPipelineCard } from "../../../components/test-generator/test-generator-pipeline-card";
 import { TestGeneratorPreviewCard } from "../../../components/test-generator/test-generator-preview-card";
 import { TestGeneratorSetupCard } from "../../../components/test-generator/test-generator-setup-card";
 
 export default function TestGeneratorPage() {
-  const [file, setFile] = useState<File | null>(null);
-  const [title, setTitle] = useState(TEST_GENERATOR_DEFAULT_TITLE);
-  const [locale, setLocale] = useState<"vi" | "en">("vi");
-  const [options, setOptions] = useState<GenerationOptions>({
-    includeSolutions: true,
-    shuffleQuestions: false,
-    shuffleChoices: false,
-  });
-
-  const [statusMessage, setStatusMessage] = useState(
-    "Sẵn sàng tạo đề kiểm tra mới"
-  );
-  const [currentStep, setCurrentStep] = useState<TestGeneratorStepKey>("idle");
-  const [progress, setProgress] = useState(0);
-  const [isRunning, setIsRunning] = useState(false);
-
-  const [markdownPreview, setMarkdownPreview] = useState("");
-  const [extractedItems, setExtractedItems] = useState<ExtractedQuestion[]>([]);
-  const [generatedItems, setGeneratedItems] = useState<GeneratedQuestion[]>([]);
-  const [generatedPartials, setGeneratedPartials] = useState<
-    Record<number, unknown>
-  >({});
-  const [generatedResult, setGeneratedResult] =
-    useState<GeneratedDocxResult | null>(null);
-
-  const [failedStep, setFailedStep] =
-    useState<TestGeneratorPipelineStep | null>(null);
-  const [failedGenerateIndex, setFailedGenerateIndex] = useState<
-    number | undefined
-  >(undefined);
-  const [resumeSnapshot, setResumeSnapshot] = useState<ResumeSnapshot | null>(
-    null
-  );
+  const {
+    file,
+    title,
+    locale,
+    options,
+    statusMessage,
+    currentStep,
+    progress,
+    isRunning,
+    markdownPreview,
+    extractedItems,
+    generatedItems,
+    generatedPartials,
+    generatedResult,
+    failedStep,
+    failedGenerateIndex,
+    setFile,
+    setTitle,
+    setLocale,
+    setIncludeSolutions,
+    setShuffleQuestions,
+    setShuffleChoices,
+    setStatusMessage,
+    setIsRunning,
+    resetPipelineState,
+    clearFailure,
+    captureResumeSnapshot,
+    applyEvent,
+    clearSavedState,
+  } = useTestGeneratorStore();
 
   const sortedGeneratedPartials = useMemo(
     () =>
@@ -71,11 +60,16 @@ export default function TestGeneratorPage() {
   );
 
   const abortRef = useRef<AbortController | null>(null);
-  const markdownPreviewRef = useRef("");
-  const extractedItemsRef = useRef<ExtractedQuestion[]>([]);
-  const generatedItemsRef = useRef<GeneratedQuestion[]>([]);
 
   const [attachment, setAttachment] = useState<Attachment | null>(null);
+
+  useEffect(() => {
+    const rehydrateStore = async () => {
+      await useTestGeneratorStore.persist.rehydrate();
+    };
+
+    rehydrateStore();
+  }, []);
 
   useEffect(() => {
     if (!file) {
@@ -96,33 +90,7 @@ export default function TestGeneratorPage() {
     };
   }, [file]);
 
-  const resetPipelineState = ({
-    keepPreview = false,
-  }: {
-    keepPreview?: boolean;
-  } = {}) => {
-    setCurrentStep("idle");
-    setProgress(0);
-    setStatusMessage("Sẵn sàng tạo đề kiểm tra mới");
-
-    if (!keepPreview) {
-      markdownPreviewRef.current = "";
-      extractedItemsRef.current = [];
-      generatedItemsRef.current = [];
-
-      setMarkdownPreview("");
-      setExtractedItems([]);
-      setGeneratedItems([]);
-      setGeneratedPartials({});
-      setGeneratedResult(null);
-    }
-
-    setFailedStep(null);
-    setFailedGenerateIndex(undefined);
-    setResumeSnapshot(null);
-  };
-
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const nextFile = event.target.files?.[0] ?? null;
 
     if (!nextFile) {
@@ -136,6 +104,7 @@ export default function TestGeneratorPage() {
     }
 
     setFile(nextFile);
+
     if (title === TEST_GENERATOR_DEFAULT_TITLE) {
       setTitle(
         nextFile.name.replace(/\.docx$/i, "") || TEST_GENERATOR_DEFAULT_TITLE
@@ -149,110 +118,6 @@ export default function TestGeneratorPage() {
     setIsRunning(false);
     setStatusMessage("Đã hủy tiến trình tạo đề.");
     toast({ type: "error", description: "Đã hủy tạo đề kiểm tra." });
-  };
-
-  const captureResumeSnapshot = (
-    nextFailedGenerateIndex?: number
-  ): ResumeSnapshot => {
-    const generatedQuestions = generatedItemsRef.current.filter(
-      (item): item is GeneratedQuestion => Boolean(item)
-    );
-
-    const snapshot: ResumeSnapshot = {
-      markdown: markdownPreviewRef.current || undefined,
-      extractedItems:
-        extractedItemsRef.current.length > 0
-          ? extractedItemsRef.current
-          : undefined,
-      generatedQuestions,
-      failedGenerateIndex: nextFailedGenerateIndex,
-    };
-
-    setResumeSnapshot(snapshot);
-    return snapshot;
-  };
-
-  const applyEvent = (event: TestGeneratorStreamEvent) => {
-    if (event.event === "step") {
-      setCurrentStep(event.step);
-      setStatusMessage(event.message);
-      if (typeof event.progress === "number") {
-        setProgress(event.progress);
-      }
-      return;
-    }
-
-    if (event.event === "markdown") {
-      markdownPreviewRef.current = event.markdown;
-      setMarkdownPreview(event.markdown);
-      return;
-    }
-
-    if (event.event === "extracted") {
-      extractedItemsRef.current = event.items;
-      setExtractedItems(event.items);
-      return;
-    }
-
-    if (event.event === "generated-partial") {
-      setGeneratedPartials((prev) => ({
-        ...prev,
-        [event.index]: event.partial,
-      }));
-      return;
-    }
-
-    if (event.event === "generated-item") {
-      const nextGeneratedItems = [...generatedItemsRef.current];
-      nextGeneratedItems[event.index] = event.item;
-      generatedItemsRef.current = nextGeneratedItems;
-      setGeneratedItems(nextGeneratedItems);
-
-      setGeneratedPartials((prev) => {
-        const next = { ...prev };
-        delete next[event.index];
-        return next;
-      });
-      return;
-    }
-
-    if (event.event === "progress") {
-      setProgress(event.progress);
-      setStatusMessage(`Đã tạo ${event.completed}/${event.total} câu hỏi mới.`);
-      return;
-    }
-
-    if (event.event === "done") {
-      setGeneratedResult(event.result);
-      setProgress(100);
-      setStatusMessage(
-        `Hoàn tất! Đã tạo ${event.totalGenerated} câu hỏi và xuất DOCX thành công.`
-      );
-      setFailedStep(null);
-      setFailedGenerateIndex(undefined);
-      setResumeSnapshot(null);
-      toast({
-        type: "success",
-        description: "Đã tạo đề kiểm tra DOCX thành công.",
-      });
-      return;
-    }
-
-    if (event.event === "error") {
-      setStatusMessage(event.message);
-
-      const nextFailedStep = event.failedStep ?? null;
-      const nextFailedGenerateIndex = event.failedGenerateIndex;
-
-      setFailedStep(nextFailedStep);
-      setFailedGenerateIndex(nextFailedGenerateIndex);
-
-      if (event.canResume) {
-        captureResumeSnapshot(nextFailedGenerateIndex);
-      }
-
-      toast({ type: "error", description: event.message });
-    }
   };
 
   const runPipeline = async ({
@@ -270,8 +135,7 @@ export default function TestGeneratorPage() {
     }
 
     if (resumeStep) {
-      setFailedStep(null);
-      setFailedGenerateIndex(undefined);
+      clearFailure();
     } else {
       resetPipelineState();
     }
@@ -299,7 +163,7 @@ export default function TestGeneratorPage() {
       }
 
       const effectiveResumeData = resumeStep
-        ? (resumeData ?? resumeSnapshot)
+        ? (resumeData ?? useTestGeneratorStore.getState().resumeSnapshot)
         : undefined;
 
       if (effectiveResumeData) {
@@ -320,6 +184,7 @@ export default function TestGeneratorPage() {
             message?: string;
             cause?: string;
           };
+
           if (data.cause) {
             message = data.cause;
           } else if (data.message) {
@@ -369,7 +234,17 @@ export default function TestGeneratorPage() {
             const parsed = JSON.parse(rawData) as TestGeneratorStreamEvent;
             applyEvent(parsed);
 
-            if (parsed.event === "done" || parsed.event === "error") {
+            if (parsed.event === "done") {
+              toast({
+                type: "success",
+                description: "Đã tạo đề kiểm tra DOCX thành công.",
+              });
+              shouldStop = true;
+              break;
+            }
+
+            if (parsed.event === "error") {
+              toast({ type: "error", description: parsed.message });
               shouldStop = true;
               break;
             }
@@ -429,6 +304,10 @@ export default function TestGeneratorPage() {
     });
   };
 
+  const handleClearSavedState = () => {
+    clearSavedState();
+  };
+
   const downloadUrl = generatedResult?.url ?? generatedResult?.path;
 
   const getPipelineStepStatus = (step: TestGeneratorPipelineStep) => {
@@ -475,29 +354,15 @@ export default function TestGeneratorPage() {
           isRunning={isRunning}
           locale={locale}
           onCancel={handleCancel}
+          onClearSavedState={handleClearSavedState}
           onContinueAfterFailure={handleContinueAfterFailure}
           onFileChange={handleFileChange}
-          onIncludeSolutionsChange={(includeSolutions) =>
-            setOptions((prev) => ({
-              ...prev,
-              includeSolutions,
-            }))
-          }
+          onIncludeSolutionsChange={setIncludeSolutions}
           onLocaleChange={setLocale}
           onRetryFailedStep={handleRetryFailedStep}
           onRun={handleRun}
-          onShuffleChoicesChange={(shuffleChoices) =>
-            setOptions((prev) => ({
-              ...prev,
-              shuffleChoices,
-            }))
-          }
-          onShuffleQuestionsChange={(shuffleQuestions) =>
-            setOptions((prev) => ({
-              ...prev,
-              shuffleQuestions,
-            }))
-          }
+          onShuffleChoicesChange={setShuffleChoices}
+          onShuffleQuestionsChange={setShuffleQuestions}
           onTitleChange={setTitle}
           options={options}
           stepLabel={TEST_GENERATOR_STEP_LABEL}
