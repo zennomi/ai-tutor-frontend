@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { type ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "@/components/toast";
 import {
@@ -20,6 +21,8 @@ import { TestGeneratorPreviewCard } from "../../../components/test-generator/tes
 import { TestGeneratorSetupCard } from "../../../components/test-generator/test-generator-setup-card";
 
 export default function TestGeneratorPage() {
+  const router = useRouter();
+
   const {
     file,
     title,
@@ -308,6 +311,18 @@ export default function TestGeneratorPage() {
     clearSavedState();
   };
 
+  const handleTakeTest = () => {
+    if (generatedItems.length === 0) {
+      toast({
+        type: "error",
+        description: "Bạn cần tạo ít nhất một câu hỏi trước khi làm bài.",
+      });
+      return;
+    }
+
+    router.push("/test-generator/take");
+  };
+
   const downloadUrl = generatedResult?.url ?? generatedResult?.path;
 
   const getPipelineStepStatus = (step: TestGeneratorPipelineStep) => {
@@ -351,6 +366,7 @@ export default function TestGeneratorPage() {
           failedStep={failedStep}
           file={file}
           generatedFilename={generatedResult?.filename}
+          hasGeneratedQuestions={generatedItems.length > 0}
           isRunning={isRunning}
           locale={locale}
           onCancel={handleCancel}
@@ -363,6 +379,7 @@ export default function TestGeneratorPage() {
           onRun={handleRun}
           onShuffleChoicesChange={setShuffleChoices}
           onShuffleQuestionsChange={setShuffleQuestions}
+          onTakeTest={handleTakeTest}
           onTitleChange={setTitle}
           options={options}
           stepLabel={TEST_GENERATOR_STEP_LABEL}

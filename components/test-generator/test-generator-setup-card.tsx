@@ -47,6 +47,7 @@ type TestGeneratorSetupCardProps = {
   stepLabel: Record<"idle" | TestGeneratorPipelineStep, string>;
   downloadUrl?: string;
   generatedFilename?: string;
+  hasGeneratedQuestions: boolean;
   onFileChange: (event: ChangeEvent<HTMLInputElement>) => void;
   onTitleChange: (value: string) => void;
   onLocaleChange: (value: "vi" | "en") => void;
@@ -57,6 +58,7 @@ type TestGeneratorSetupCardProps = {
   onCancel: () => void;
   onRetryFailedStep: () => void;
   onContinueAfterFailure: () => void;
+  onTakeTest: () => void;
   onClearSavedState: () => void;
 };
 
@@ -72,6 +74,7 @@ export function TestGeneratorSetupCard({
   stepLabel,
   downloadUrl,
   generatedFilename,
+  hasGeneratedQuestions,
   onFileChange,
   onTitleChange,
   onLocaleChange,
@@ -82,6 +85,7 @@ export function TestGeneratorSetupCard({
   onCancel,
   onRetryFailedStep,
   onContinueAfterFailure,
+  onTakeTest,
   onClearSavedState,
 }: TestGeneratorSetupCardProps) {
   return (
@@ -293,6 +297,15 @@ export function TestGeneratorSetupCard({
                 </a>
               </Button>
             )}
+
+            <Button
+              disabled={isRunning || !hasGeneratedQuestions}
+              onClick={onTakeTest}
+              type="button"
+              variant="outline"
+            >
+              Làm bài kiểm tra
+            </Button>
 
             <Button
               disabled={isRunning}

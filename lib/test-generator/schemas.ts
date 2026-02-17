@@ -71,6 +71,18 @@ export const generatedQuestionPartialSchema = z
 
 export const generatedQuestionsSchema = z.array(generatedQuestionSchema).min(1);
 
+export const gradeEssayRequestSchema = z.object({
+  question: z.string().min(1),
+  expectedAnswer: z.string().min(1),
+  studentAnswer: z.string(),
+  locale: z.enum(["vi", "en"]).optional(),
+});
+
+export const gradeEssayResponseSchema = z.object({
+  score: z.number().min(0).max(1),
+  feedback: z.string().min(1),
+});
+
 export const generateDocxPayloadSchema = z.object({
   title: z.string().min(1),
   locale: z.enum(["vi", "en"]).optional(),
@@ -158,6 +170,8 @@ export const testGeneratorStreamEventSchema = z.discriminatedUnion("event", [
 
 export type ExtractedQuestion = z.infer<typeof extractedQuestionSchema>;
 export type GeneratedQuestion = z.infer<typeof generatedQuestionSchema>;
+export type GradeEssayRequest = z.infer<typeof gradeEssayRequestSchema>;
+export type GradeEssayResponse = z.infer<typeof gradeEssayResponseSchema>;
 export type GenerateDocxPayload = z.infer<typeof generateDocxPayloadSchema>;
 export type GeneratedDocxResult = z.infer<typeof generatedDocxResultSchema>;
 export type TestGeneratorPipelineStep = z.infer<
