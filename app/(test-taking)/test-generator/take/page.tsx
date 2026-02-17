@@ -12,13 +12,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import {
-  type ReactNode,
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import { type ReactNode, useCallback, useEffect, useMemo } from "react";
 import { Response } from "@/components/elements/response";
 import { toast } from "@/components/toast";
 import { Badge } from "@/components/ui/badge";
@@ -45,48 +39,19 @@ import type {
   GradeEssayResponse,
 } from "@/lib/test-generator/schemas";
 import { useTestGeneratorStore } from "@/lib/test-generator/store";
+import {
+  type QuestionAnswer,
+  type ReviewItem,
+  TAKE_TEST_DEFAULT_DURATION_MINUTES,
+  TAKE_TEST_MAX_DURATION_MINUTES,
+  TAKE_TEST_MIN_DURATION_MINUTES,
+  useTakeTestSessionStore,
+} from "@/lib/test-taking/store";
 import { cn } from "@/lib/utils";
 
-type ObjectiveAnswer =
-  | {
-      kind: "MULTIPLE_CHOICE";
-      answerIndex: number;
-    }
-  | {
-      kind: "TRUE_FALSE";
-      answers: Record<number, boolean>;
-    };
-
-type QuestionAnswer =
-  | ObjectiveAnswer
-  | {
-      kind: "ESSAY";
-      text: string;
-    };
-
-type ReviewItem = {
-  score: number;
-  maxScore: number;
-  isAnswered: boolean;
-  userAnswerText: string;
-  correctAnswerText: string;
-  essayFeedback?: string;
-  essayStatus?: "graded" | "failed";
-};
-
-type ResultSummary = {
-  totalScore: number;
-  maxScore: number;
-  percentage: number;
-  answeredCount: number;
-  questionCount: number;
-  timeSpentSeconds: number;
-  reviewItems: ReviewItem[];
-};
-
-const DEFAULT_DURATION_MINUTES = 15;
-const MIN_DURATION_MINUTES = 1;
-const MAX_DURATION_MINUTES = 180;
+const DEFAULT_DURATION_MINUTES = TAKE_TEST_DEFAULT_DURATION_MINUTES;
+const MIN_DURATION_MINUTES = TAKE_TEST_MIN_DURATION_MINUTES;
+const MAX_DURATION_MINUTES = TAKE_TEST_MAX_DURATION_MINUTES;
 
 function clampMinutes(value: number) {
   if (!Number.isFinite(value)) {
@@ -444,27 +409,34 @@ export default function TakeTestPage() {
 
   const { generatedItems, locale, title } = useTestGeneratorStore();
 
-  const [hasHydrated, setHasHydrated] = useState(false);
-  const [activeQuestionIndex, setActiveQuestionIndex] = useState(0);
-  const [answersByIndex, setAnswersByIndex] = useState<
-    Record<number, QuestionAnswer>
-  >({});
-  const [bookmarkedIndices, setBookmarkedIndices] = useState<number[]>([]);
-  const [isStarted, setIsStarted] = useState(false);
-  const [durationMinutes, setDurationMinutes] = useState(
-    DEFAULT_DURATION_MINUTES
-  );
-  const [startedAt, setStartedAt] = useState<number | null>(null);
-  const [timeLeftSeconds, setTimeLeftSeconds] = useState(
-    DEFAULT_DURATION_MINUTES * 60
-  );
-  const [isSubmitted, setIsSubmitted] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [resultSummary, setResultSummary] = useState<ResultSummary | null>(
-    null
-  );
-  const [failedEssayIndices, setFailedEssayIndices] = useState<number[]>([]);
-  const [isQuestionNavOpen, setIsQuestionNavOpen] = useState(false);
+  const {
+    hasHydrated,
+    activeQuestionIndex,
+    answersByIndex,
+    bookmarkedIndices,
+    isStarted,
+    durationMinutes,
+    startedAt,
+    timeLeftSeconds,
+    isSubmitted,
+    isSubmitting,
+    resultSummary,
+    failedEssayIndices,
+    isQuestionNavOpen,
+    hydrateSession,
+    resetSession,
+    setActiveQuestionIndex,
+    setAnswerByIndex,
+    toggleBookmarkedIndex,
+    setDurationMinutes,
+    startTest,
+    setTimeLeftSeconds,
+    setIsSubmitting,
+    setIsSubmitted,
+    setResultSummary,
+    setFailedEssayIndices,
+    setQuestionNavOpen,
+  } = useTakeTestSessionStore();
 
   const questions = useMemo(
     () =>
@@ -473,6 +445,11 @@ export default function TakeTestPage() {
   );
 
   const totalQuestions = questions.length;
+
+  const safeActiveQuestionIndex =
+    totalQuestions === 0
+      ? 0
+      : Math.min(Math.max(activeQuestionIndex, 0), totalQuestions - 1);
 
   const answeredCount = useMemo(
     () =>
@@ -487,20 +464,41 @@ export default function TakeTestPage() {
   const progressValue =
     totalQuestions > 0 ? Math.round((answeredCount / totalQuestions) * 100) : 0;
 
-  const currentQuestion = questions[activeQuestionIndex];
-  const currentAnswer = answersByIndex[activeQuestionIndex];
-  const isCurrentBookmarked = bookmarkedIndices.includes(activeQuestionIndex);
+  const currentQuestion = questions[safeActiveQuestionIndex];
+  const currentAnswer = answersByIndex[safeActiveQuestionIndex];
+  const isCurrentBookmarked = bookmarkedIndices.includes(
+    safeActiveQuestionIndex
+  );
 
   const isTimeUp = isStarted && timeLeftSeconds <= 0 && !isSubmitted;
 
   useEffect(() => {
     const runRehydrate = async () => {
       await useTestGeneratorStore.persist.rehydrate();
-      setHasHydrated(true);
+      resetSession();
+      hydrateSession();
     };
 
     runRehydrate();
-  }, []);
+  }, [hydrateSession, resetSession]);
+
+  useEffect(() => {
+    if (totalQuestions === 0) {
+      if (activeQuestionIndex !== 0) {
+        setActiveQuestionIndex(0);
+      }
+      return;
+    }
+
+    const nextIndex = Math.min(
+      Math.max(activeQuestionIndex, 0),
+      totalQuestions - 1
+    );
+
+    if (nextIndex !== activeQuestionIndex) {
+      setActiveQuestionIndex(nextIndex);
+    }
+  }, [activeQuestionIndex, setActiveQuestionIndex, totalQuestions]);
 
   useEffect(() => {
     if (!isStarted || isSubmitted || startedAt === null) {
@@ -519,7 +517,7 @@ export default function TakeTestPage() {
     return () => {
       window.clearInterval(intervalId);
     };
-  }, [durationMinutes, isStarted, isSubmitted, startedAt]);
+  }, [durationMinutes, isStarted, isSubmitted, setTimeLeftSeconds, startedAt]);
 
   const submitTest = useCallback(async () => {
     if (isSubmitting || isSubmitted || totalQuestions === 0) {
@@ -633,6 +631,10 @@ export default function TakeTestPage() {
     isSubmitting,
     locale,
     questions,
+    setFailedEssayIndices,
+    setIsSubmitted,
+    setIsSubmitting,
+    setResultSummary,
     startedAt,
     totalQuestions,
   ]);
@@ -650,41 +652,35 @@ export default function TakeTestPage() {
     const now = Date.now();
 
     setDurationMinutes(nextDuration);
-    setStartedAt(now);
-    setTimeLeftSeconds(nextDuration * 60);
-    setIsStarted(true);
-  };
-
-  const handleToggleBookmark = () => {
-    setBookmarkedIndices((current) => {
-      if (current.includes(activeQuestionIndex)) {
-        return current.filter((index) => index !== activeQuestionIndex);
-      }
-
-      return [...current, activeQuestionIndex].sort(
-        (left, right) => left - right
-      );
+    startTest({
+      durationMinutes: nextDuration,
+      startedAt: now,
+      timeLeftSeconds: nextDuration * 60,
     });
   };
 
-  const handleAnswerChange = (value: QuestionAnswer) => {
-    setAnswersByIndex((current) => ({
-      ...current,
-      [activeQuestionIndex]: value,
-    }));
-  };
+  const handleToggleBookmark = useCallback(() => {
+    toggleBookmarkedIndex(safeActiveQuestionIndex);
+  }, [safeActiveQuestionIndex, toggleBookmarkedIndex]);
 
-  const goToPrevious = () => {
-    setActiveQuestionIndex((current) => Math.max(0, current - 1));
-  };
+  const handleAnswerChange = useCallback(
+    (value: QuestionAnswer) => {
+      setAnswerByIndex(safeActiveQuestionIndex, value);
+    },
+    [safeActiveQuestionIndex, setAnswerByIndex]
+  );
 
-  const goToNext = () => {
-    setActiveQuestionIndex((current) =>
-      Math.min(totalQuestions - 1, current + 1)
+  const goToPrevious = useCallback(() => {
+    setActiveQuestionIndex(Math.max(0, safeActiveQuestionIndex - 1));
+  }, [safeActiveQuestionIndex, setActiveQuestionIndex]);
+
+  const goToNext = useCallback(() => {
+    setActiveQuestionIndex(
+      Math.min(totalQuestions - 1, safeActiveQuestionIndex + 1)
     );
-  };
+  }, [safeActiveQuestionIndex, setActiveQuestionIndex, totalQuestions]);
 
-  const retryFailedEssayGrades = async () => {
+  const retryFailedEssayGrades = useCallback(async () => {
     if (!resultSummary || failedEssayIndices.length === 0 || isSubmitting) {
       return;
     }
@@ -771,7 +767,17 @@ export default function TakeTestPage() {
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }, [
+    answersByIndex,
+    failedEssayIndices,
+    isSubmitting,
+    locale,
+    questions,
+    resultSummary,
+    setFailedEssayIndices,
+    setIsSubmitting,
+    setResultSummary,
+  ]);
 
   const renderPrimaryActionButton = (className?: string) => {
     if (isSubmitted) {
@@ -854,12 +860,12 @@ export default function TakeTestPage() {
     );
   }
 
-  const isFirstQuestion = activeQuestionIndex === 0;
-  const isLastQuestion = activeQuestionIndex === totalQuestions - 1;
+  const isFirstQuestion = safeActiveQuestionIndex === 0;
+  const isLastQuestion = safeActiveQuestionIndex === totalQuestions - 1;
 
   const reviewItem =
     isSubmitted && resultSummary
-      ? resultSummary.reviewItems[activeQuestionIndex]
+      ? resultSummary.reviewItems[safeActiveQuestionIndex]
       : null;
 
   const questionNavigationList = (
@@ -869,11 +875,11 @@ export default function TakeTestPage() {
           index={index}
           isAnswered={isAnswerProvided(question, answersByIndex[index])}
           isBookmarked={bookmarkedIndices.includes(index)}
-          isCurrent={index === activeQuestionIndex}
+          isCurrent={index === safeActiveQuestionIndex}
           key={`question-nav-${question.format}-${index}`}
           onSelect={() => {
             setActiveQuestionIndex(index);
-            setIsQuestionNavOpen(false);
+            setQuestionNavOpen(false);
           }}
         />
       ))}
@@ -883,7 +889,7 @@ export default function TakeTestPage() {
   return (
     <Collapsible
       className="flex h-full min-h-0 w-full flex-col overflow-hidden"
-      onOpenChange={setIsQuestionNavOpen}
+      onOpenChange={setQuestionNavOpen}
       open={isQuestionNavOpen}
     >
       <header className="shrink-0 border-b bg-card px-3 py-3 md:px-4">
@@ -1037,7 +1043,9 @@ export default function TakeTestPage() {
         <Card className="flex min-h-0 flex-1 flex-col overflow-hidden">
           <CardHeader className="shrink-0">
             <div className="flex flex-wrap items-center gap-2">
-              <Badge variant="secondary">Câu {activeQuestionIndex + 1}</Badge>
+              <Badge variant="secondary">
+                Câu {safeActiveQuestionIndex + 1}
+              </Badge>
               <Badge variant="outline">
                 {getQuestionFormatLabel(currentQuestion.format)}
               </Badge>
