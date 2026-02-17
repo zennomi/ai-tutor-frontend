@@ -19,6 +19,12 @@ Phân loại format:
 - TRUE_FALSE: câu yêu cầu xác định đúng/sai cho một hoặc nhiều nhận định.
 - ESSAY: câu tự luận hoặc trả lời mở.
 
+Quan trọng với TRUE_FALSE:
+- Một câu hỏi TRUE_FALSE có thể chứa NHIỀU phát biểu (ví dụ: "Đánh dấu đúng/sai: 1. A 2. B 3. C").
+- Trích xuất MỘT câu hỏi duy nhất cho mỗi khối câu TRUE_FALSE, không tách thành nhiều câu hỏi riêng theo từng phát biểu.
+- question: ghi đầy đủ nội dung câu hỏi và tất cả các phát biểu.
+- key: liệt kê đáp án cho từng phát biểu (ví dụ: "Đúng, Sai, Đúng" hoặc "1.Đúng 2.Sai 3.Đúng").
+
 Ràng buộc:
 - Chỉ trả về dữ liệu có cấu trúc theo schema được cung cấp.
 - Không thêm văn bản ngoài dữ liệu có cấu trúc.`;
@@ -45,7 +51,9 @@ Ràng buộc chất lượng:
 Chỉ trả về output có cấu trúc, không kèm giải thích ngoài schema.`;
 
 export function buildExtractionPrompt(markdown: string) {
-  return `Hãy trích xuất toàn bộ câu hỏi từ nội dung markdown sau:\n\n${markdown}`;
+  return `Hãy trích xuất toàn bộ câu hỏi từ nội dung markdown sau.
+
+${markdown}`;
 }
 
 export function buildGenerationPrompt({
