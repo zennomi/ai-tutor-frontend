@@ -1,25 +1,27 @@
 "use client";
 
 import {
-  AlertCircleIcon,
   BookmarkIcon,
   CheckCircleIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  ClockIcon,
   FileTextIcon,
-  HomeIcon,
   ListChecksIcon,
-  Loader2Icon,
   type LucideIcon,
 } from "lucide-react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { type ReactNode, useCallback, useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { Response } from "@/components/elements/response";
+import { QuestionAnswerInput } from "@/components/test-taking/question-answer-input";
+import { QuestionNavigationPanel } from "@/components/test-taking/question-navigation-panel";
+import { QuestionReviewPanel } from "@/components/test-taking/question-review-panel";
+import { TakeTestFooter } from "@/components/test-taking/take-test-footer";
+import { TakeTestHeader } from "@/components/test-taking/take-test-header";
+import {
+  TakeTestEmptyState,
+  TakeTestLoadingState,
+  TakeTestPreStartState,
+} from "@/components/test-taking/take-test-states";
 import { toast } from "@/components/toast";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -27,62 +29,23 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Progress } from "@/components/ui/progress";
+import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Textarea } from "@/components/ui/textarea";
-import type {
-  GeneratedQuestion,
-  GradeEssayResponse,
-} from "@/lib/test-generator/schemas";
+import type { GeneratedQuestion } from "@/lib/test-generator/schemas";
 import { useTestGeneratorStore } from "@/lib/test-generator/store";
+import { gradeEssayAnswer } from "@/lib/test-taking/essay-grading";
 import {
   type QuestionAnswer,
-  type ReviewItem,
-  TAKE_TEST_DEFAULT_DURATION_MINUTES,
-  TAKE_TEST_MAX_DURATION_MINUTES,
-  TAKE_TEST_MIN_DURATION_MINUTES,
   useTakeTestSessionStore,
 } from "@/lib/test-taking/store";
-import { cn } from "@/lib/utils";
-
-const DEFAULT_DURATION_MINUTES = TAKE_TEST_DEFAULT_DURATION_MINUTES;
-const MIN_DURATION_MINUTES = TAKE_TEST_MIN_DURATION_MINUTES;
-const MAX_DURATION_MINUTES = TAKE_TEST_MAX_DURATION_MINUTES;
-
-function clampMinutes(value: number) {
-  if (!Number.isFinite(value)) {
-    return DEFAULT_DURATION_MINUTES;
-  }
-
-  return Math.min(MAX_DURATION_MINUTES, Math.max(MIN_DURATION_MINUTES, value));
-}
-
-function formatTime(totalSeconds: number) {
-  const safeSeconds = Math.max(0, totalSeconds);
-  const minutes = Math.floor(safeSeconds / 60);
-  const seconds = safeSeconds % 60;
-
-  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
-}
-
-function getQuestionFormatLabel(format: GeneratedQuestion["format"]) {
-  if (format === "MULTIPLE_CHOICE") {
-    return "Trắc nghiệm";
-  }
-
-  if (format === "TRUE_FALSE") {
-    return "Đúng / Sai";
-  }
-
-  return "Tự luận";
-}
+import {
+  clampMinutes,
+  formatTime,
+  getObjectiveReviewItem,
+  getQuestionFormatLabel,
+  isAnswerProvided,
+  normalizeText,
+} from "@/lib/test-taking/utils";
 
 const questionFormatIcons: Record<GeneratedQuestion["format"], LucideIcon> = {
   MULTIPLE_CHOICE: ListChecksIcon,
@@ -107,329 +70,6 @@ function QuestionFormatIconBadge({
       <Icon aria-hidden className="size-3.5" />
       <span className="sr-only">{label}</span>
     </Badge>
-  );
-}
-
-function normalizeText(value: string) {
-  return value.trim();
-}
-
-function isAnswerProvided(
-  question: GeneratedQuestion,
-  answer: QuestionAnswer | undefined
-) {
-  if (!answer) {
-    return false;
-  }
-
-  if (answer.kind === "MULTIPLE_CHOICE") {
-    return true;
-  }
-
-  if (answer.kind === "TRUE_FALSE") {
-    const statementCount =
-      question.format === "TRUE_FALSE" ? question.statements.length : 0;
-    const answeredStatements = Object.values(answer.answers).filter(
-      (value) => typeof value === "boolean"
-    ).length;
-
-    return Math.min(statementCount, answeredStatements) > 0;
-  }
-
-  return normalizeText(answer.text).length > 0;
-}
-
-function getObjectiveReviewItem(
-  question: GeneratedQuestion,
-  answer: QuestionAnswer | undefined
-): ReviewItem {
-  if (question.format === "MULTIPLE_CHOICE") {
-    const isAnswered = answer?.kind === "MULTIPLE_CHOICE";
-    const selectedIndex = isAnswered ? answer.answerIndex : undefined;
-    const isCorrect = selectedIndex === question.answer;
-
-    const selectedLabel =
-      selectedIndex !== undefined
-        ? `${String.fromCharCode(65 + selectedIndex)}. ${question.choices[selectedIndex] ?? ""}`
-        : "Chưa trả lời";
-    const correctLabel = `${String.fromCharCode(65 + question.answer)}. ${
-      question.choices[question.answer] ?? ""
-    }`;
-
-    return {
-      score: isCorrect ? 1 : 0,
-      maxScore: 1,
-      isAnswered,
-      userAnswerText: selectedLabel,
-      correctAnswerText: correctLabel,
-    };
-  }
-
-  if (question.format === "TRUE_FALSE") {
-    const statementCount = question.statements.length;
-    const expectedAnswers = question.answers.slice(0, statementCount);
-    const responseMap =
-      answer?.kind === "TRUE_FALSE" ? answer.answers : undefined;
-
-    let correctCount = 0;
-    let answeredCount = 0;
-
-    const userAnswerLines = question.statements.map((statement, index) => {
-      const value = responseMap?.[index];
-      const answered = typeof value === "boolean";
-
-      if (answered) {
-        answeredCount += 1;
-      }
-
-      const expected = expectedAnswers[index];
-
-      if (answered && value === expected) {
-        correctCount += 1;
-      }
-
-      return `${index + 1}. ${statement} → ${
-        answered ? (value ? "Đúng" : "Sai") : "Chưa trả lời"
-      }`;
-    });
-
-    const correctAnswerLines = question.statements.map(
-      (statement, index) =>
-        `${index + 1}. ${statement} → ${expectedAnswers[index] ? "Đúng" : "Sai"}`
-    );
-
-    const denominator = Math.max(1, statementCount);
-
-    return {
-      score: correctCount / denominator,
-      maxScore: 1,
-      isAnswered: answeredCount > 0,
-      userAnswerText: userAnswerLines.join("\n"),
-      correctAnswerText: correctAnswerLines.join("\n"),
-    };
-  }
-
-  const text = answer?.kind === "ESSAY" ? answer.text : "";
-
-  return {
-    score: 0,
-    maxScore: 1,
-    isAnswered: normalizeText(text).length > 0,
-    userAnswerText: normalizeText(text) || "Chưa trả lời",
-    correctAnswerText: question.answers,
-  };
-}
-
-async function gradeEssayAnswer({
-  question,
-  expectedAnswer,
-  studentAnswer,
-  locale,
-}: {
-  question: string;
-  expectedAnswer: string;
-  studentAnswer: string;
-  locale: "vi" | "en";
-}) {
-  const response = await fetch("/api/test-generator/grade-essay", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      question,
-      expectedAnswer,
-      studentAnswer,
-      locale,
-    }),
-  });
-
-  if (!response.ok) {
-    let message = "Không thể chấm câu tự luận.";
-
-    try {
-      const errorData = (await response.json()) as {
-        cause?: string;
-        message?: string;
-      };
-
-      if (errorData.cause) {
-        message = errorData.cause;
-      } else if (errorData.message) {
-        message = errorData.message;
-      }
-    } catch {
-      // ignore JSON parse errors
-    }
-
-    throw new Error(message);
-  }
-
-  return (await response.json()) as GradeEssayResponse;
-}
-
-function QuestionNavButton({
-  index,
-  isCurrent,
-  isAnswered,
-  isBookmarked,
-  onSelect,
-}: {
-  index: number;
-  isCurrent: boolean;
-  isAnswered: boolean;
-  isBookmarked: boolean;
-  onSelect: () => void;
-}) {
-  return (
-    <button
-      className={cn(
-        "flex h-9 items-center justify-between rounded-md border px-3 text-left text-sm transition-colors",
-        isCurrent
-          ? "border-primary bg-primary/10"
-          : "border-border hover:bg-muted/40",
-        isAnswered && "border-green-500/40",
-        isBookmarked && "ring-1 ring-amber-500/50"
-      )}
-      onClick={onSelect}
-      type="button"
-    >
-      <span className="font-medium">Câu {index + 1}</span>
-      <span className="flex items-center gap-1">
-        {isAnswered && <CheckCircleIcon className="size-3.5 text-green-600" />}
-        {isBookmarked && <BookmarkIcon className="size-3.5 text-amber-500" />}
-      </span>
-    </button>
-  );
-}
-
-function renderQuestionAnswer(
-  question: GeneratedQuestion,
-  answer: QuestionAnswer | undefined,
-  onAnswerChange: (value: QuestionAnswer) => void,
-  disabled: boolean
-): ReactNode {
-  if (question.format === "MULTIPLE_CHOICE") {
-    const selectedIndex =
-      answer?.kind === "MULTIPLE_CHOICE" ? answer.answerIndex : -1;
-
-    return (
-      <div className="space-y-2">
-        {question.choices.map((choice, index) => {
-          const isSelected = selectedIndex === index;
-
-          return (
-            <button
-              className={cn(
-                "w-full rounded-md border p-3 text-left text-sm transition-colors",
-                isSelected
-                  ? "border-primary bg-primary/10"
-                  : "border-border hover:bg-muted/30",
-                disabled && "cursor-default opacity-80"
-              )}
-              disabled={disabled}
-              key={`${question.format}-choice-${index}`}
-              onClick={() =>
-                onAnswerChange({
-                  kind: "MULTIPLE_CHOICE",
-                  answerIndex: index,
-                })
-              }
-              type="button"
-            >
-              <p className="font-medium">{String.fromCharCode(65 + index)}</p>
-              <Response className="text-sm">{choice}</Response>
-            </button>
-          );
-        })}
-      </div>
-    );
-  }
-
-  if (question.format === "TRUE_FALSE") {
-    const selectedAnswers =
-      answer?.kind === "TRUE_FALSE"
-        ? answer.answers
-        : ({} as Record<number, boolean>);
-
-    return (
-      <div className="space-y-3">
-        {question.statements.map((statement, index) => {
-          const selectedValue = selectedAnswers[index];
-
-          return (
-            <div
-              className="rounded-md border p-3"
-              key={`${question.format}-${index}`}
-            >
-              <p className="mb-2 font-medium text-sm">Mệnh đề {index + 1}</p>
-              <Response className="mb-3 text-sm">{statement}</Response>
-
-              <div className="flex gap-2">
-                <Button
-                  disabled={disabled}
-                  onClick={() => {
-                    const nextAnswers = {
-                      ...selectedAnswers,
-                      [index]: true,
-                    };
-
-                    onAnswerChange({
-                      kind: "TRUE_FALSE",
-                      answers: nextAnswers,
-                    });
-                  }}
-                  size="sm"
-                  type="button"
-                  variant={selectedValue === true ? "default" : "outline"}
-                >
-                  Đúng
-                </Button>
-                <Button
-                  disabled={disabled}
-                  onClick={() => {
-                    const nextAnswers = {
-                      ...selectedAnswers,
-                      [index]: false,
-                    };
-
-                    onAnswerChange({
-                      kind: "TRUE_FALSE",
-                      answers: nextAnswers,
-                    });
-                  }}
-                  size="sm"
-                  type="button"
-                  variant={selectedValue === false ? "default" : "outline"}
-                >
-                  Sai
-                </Button>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    );
-  }
-
-  const essayText = answer?.kind === "ESSAY" ? answer.text : "";
-
-  return (
-    <div className="space-y-2">
-      <Label htmlFor="essay-answer">Câu trả lời của bạn</Label>
-      <Textarea
-        disabled={disabled}
-        id="essay-answer"
-        onChange={(event) => {
-          onAnswerChange({
-            kind: "ESSAY",
-            text: event.target.value,
-          });
-        }}
-        placeholder="Nhập câu trả lời tự luận..."
-        value={essayText}
-      />
-    </div>
   );
 }
 
@@ -493,13 +133,9 @@ export default function TakeTestPage() {
   const progressValue =
     totalQuestions > 0 ? Math.round((answeredCount / totalQuestions) * 100) : 0;
 
-  const currentQuestion = questions[safeActiveQuestionIndex];
-  const currentAnswer = answersByIndex[safeActiveQuestionIndex];
-  const isCurrentBookmarked = bookmarkedIndices.includes(
-    safeActiveQuestionIndex
-  );
-
+  const selectedDurationMinutes = clampMinutes(durationMinutes);
   const isTimeUp = isStarted && timeLeftSeconds <= 0 && !isSubmitted;
+  const canShowTestContent = isStarted || isSubmitted;
 
   useEffect(() => {
     const runRehydrate = async () => {
@@ -808,87 +444,19 @@ export default function TakeTestPage() {
     setResultSummary,
   ]);
 
-  const renderPrimaryActionButton = (className?: string) => {
-    if (isSubmitted) {
-      if (failedEssayIndices.length === 0) {
-        return null;
-      }
-
-      return (
-        <Button
-          className={className}
-          disabled={isSubmitting}
-          onClick={retryFailedEssayGrades}
-          type="button"
-        >
-          {isSubmitting ? (
-            <>
-              <Loader2Icon className="size-4 animate-spin" />
-              Đang chấm lại...
-            </>
-          ) : (
-            "Chấm lại tự luận"
-          )}
-        </Button>
-      );
-    }
-
-    return (
-      <Button
-        className={className}
-        disabled={isSubmitting || !isStarted}
-        onClick={submitTest}
-        type="button"
-      >
-        {isSubmitting ? (
-          <>
-            <Loader2Icon className="size-4 animate-spin" />
-            Đang nộp bài...
-          </>
-        ) : (
-          "Nộp bài"
-        )}
-      </Button>
-    );
-  };
-
   if (!hasHydrated) {
-    return (
-      <div className="flex h-full w-full items-center justify-center p-4">
-        <Card className="w-full max-w-md">
-          <CardContent className="flex items-center justify-center gap-2 p-6 text-sm text-muted-foreground">
-            <Loader2Icon className="size-4 animate-spin" />
-            Đang tải dữ liệu bài kiểm tra...
-          </CardContent>
-        </Card>
-      </div>
-    );
+    return <TakeTestLoadingState />;
   }
 
   if (totalQuestions === 0) {
-    return (
-      <div className="flex h-full w-full items-center justify-center p-4">
-        <Card className="w-full max-w-2xl border-primary/20 shadow-sm">
-          <CardHeader>
-            <CardTitle>Chưa có đề để làm bài</CardTitle>
-            <CardDescription>
-              Bạn cần tạo câu hỏi trong màn hình test generator trước khi bắt
-              đầu làm bài.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-wrap gap-2">
-            <Button asChild>
-              <Link href="/test-generator">
-                <HomeIcon className="size-4" />
-                Quay lại tạo đề
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
+    return <TakeTestEmptyState />;
   }
 
+  const currentQuestion = questions[safeActiveQuestionIndex];
+  const currentAnswer = answersByIndex[safeActiveQuestionIndex];
+  const isCurrentBookmarked = bookmarkedIndices.includes(
+    safeActiveQuestionIndex
+  );
   const isFirstQuestion = safeActiveQuestionIndex === 0;
   const isLastQuestion = safeActiveQuestionIndex === totalQuestions - 1;
 
@@ -897,319 +465,179 @@ export default function TakeTestPage() {
       ? resultSummary.reviewItems[safeActiveQuestionIndex]
       : null;
 
-  const questionNavigationList = (
-    <div className="grid gap-1 sm:grid-cols-2 xl:grid-cols-3">
-      {questions.map((question, index) => (
-        <QuestionNavButton
-          index={index}
-          isAnswered={isAnswerProvided(question, answersByIndex[index])}
-          isBookmarked={bookmarkedIndices.includes(index)}
-          isCurrent={index === safeActiveQuestionIndex}
-          key={`question-nav-${question.format}-${index}`}
-          onSelect={() => {
-            setActiveQuestionIndex(index);
-            setQuestionNavOpen(false);
-          }}
-        />
-      ))}
-    </div>
-  );
-
   return (
     <Collapsible
       className="flex h-full min-h-0 w-full flex-col overflow-hidden"
       onOpenChange={setQuestionNavOpen}
       open={isQuestionNavOpen}
     >
-      <header className="shrink-0 border-b bg-card px-3 py-3 md:px-4">
-        <div className="flex flex-wrap items-start justify-between gap-2">
-          <div className="min-w-0">
-            <p className="truncate font-semibold text-base md:text-lg">
-              {title}
-            </p>
-            <p className="text-muted-foreground text-xs md:text-sm">
-              Làm bài kiểm tra · {totalQuestions} câu hỏi
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            <Button
-              onClick={handleToggleBookmark}
-              size="sm"
-              type="button"
-              variant={isCurrentBookmarked ? "default" : "outline"}
-            >
-              <BookmarkIcon className="size-4" />
-              {isCurrentBookmarked ? "Đã đánh dấu" : "Đánh dấu câu hiện tại"}
-            </Button>
-
-            <CollapsibleTrigger asChild>
-              <Button size="sm" type="button" variant="outline">
-                {isQuestionNavOpen ? "Ẩn điều hướng" : "Điều hướng câu hỏi"}
-              </Button>
-            </CollapsibleTrigger>
-
-            <Button
-              onClick={() => router.push("/test-generator")}
-              size="sm"
-              type="button"
-              variant="outline"
-            >
-              Về trang tạo đề
-            </Button>
-          </div>
-        </div>
-
-        <div className="mt-3 space-y-2">
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">Tiến độ làm bài</span>
-            <span className="font-medium">{progressValue}%</span>
-          </div>
-          <Progress value={progressValue} />
-        </div>
-
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          <Badge variant="secondary">Đã trả lời: {answeredCount}</Badge>
-          <Badge variant="secondary">
-            Đã đánh dấu: {bookmarkedIndices.length}
-          </Badge>
-
-          {isStarted ? (
-            <Badge className="ml-auto gap-1" variant="outline">
-              <ClockIcon className="size-3.5" />
-              {formatTime(timeLeftSeconds)}
-            </Badge>
-          ) : (
-            <div className="ml-auto flex items-end gap-2">
-              <div className="space-y-1">
-                <Label htmlFor="duration-minutes">Thời gian (phút)</Label>
-                <Input
-                  className="w-24"
-                  id="duration-minutes"
-                  max={MAX_DURATION_MINUTES}
-                  min={MIN_DURATION_MINUTES}
-                  onChange={(event) => {
-                    const rawValue = Number.parseInt(event.target.value, 10);
-                    setDurationMinutes(
-                      Number.isNaN(rawValue)
-                        ? DEFAULT_DURATION_MINUTES
-                        : clampMinutes(rawValue)
-                    );
-                  }}
-                  type="number"
-                  value={durationMinutes}
-                />
-              </div>
-
-              <Button onClick={handleStart} type="button">
-                Bắt đầu làm bài
-              </Button>
-            </div>
-          )}
-        </div>
-      </header>
+      <TakeTestHeader
+        answeredCount={answeredCount}
+        bookmarkedCount={bookmarkedIndices.length}
+        canShowTestContent={canShowTestContent}
+        isCurrentBookmarked={isCurrentBookmarked}
+        isQuestionNavOpen={isQuestionNavOpen}
+        isStarted={isStarted}
+        onGoToGenerator={() => router.push("/test-generator")}
+        onToggleBookmark={handleToggleBookmark}
+        progressValue={progressValue}
+        timeLeftSeconds={timeLeftSeconds}
+        title={title}
+        totalQuestions={totalQuestions}
+      />
 
       <main className="flex min-h-0 flex-1 flex-col overflow-hidden px-3 py-3 md:px-4">
-        <CollapsibleContent className="shrink-0">
-          <Card className="mb-3">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Điều hướng câu hỏi</CardTitle>
-              <CardDescription>
-                {answeredCount}/{totalQuestions} đã trả lời ·{" "}
-                {bookmarkedIndices.length} đã đánh dấu
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <ScrollArea className="h-52 pr-3">
-                {questionNavigationList}
-              </ScrollArea>
-            </CardContent>
-          </Card>
-        </CollapsibleContent>
+        {canShowTestContent ? (
+          <>
+            <CollapsibleContent className="shrink-0">
+              <QuestionNavigationPanel
+                activeQuestionIndex={safeActiveQuestionIndex}
+                answersByIndex={answersByIndex}
+                bookmarkedIndices={bookmarkedIndices}
+                onSelectQuestion={(index) => {
+                  setActiveQuestionIndex(index);
+                  setQuestionNavOpen(false);
+                }}
+                questions={questions}
+              />
+            </CollapsibleContent>
 
-        {isSubmitted && resultSummary ? (
-          <Card className="mb-3 shrink-0">
-            <CardHeader>
-              <CardTitle>Kết quả bài làm</CardTitle>
-              <CardDescription>
-                Điểm tổng hợp cho tất cả dạng câu hỏi (bao gồm tự luận).
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-              <div className="rounded-md border p-3">
-                <p className="text-muted-foreground text-xs">Tổng điểm</p>
-                <p className="font-semibold text-lg">
-                  {resultSummary.totalScore.toFixed(2)} /{" "}
-                  {resultSummary.maxScore.toFixed(2)}
+            {isSubmitted && resultSummary ? (
+              <section className="mb-3 shrink-0 space-y-2">
+                <p className="px-1 text-muted-foreground text-xs uppercase tracking-wide">
+                  Tổng quan kết quả
                 </p>
-              </div>
-              <div className="rounded-md border p-3">
-                <p className="text-muted-foreground text-xs">Tỷ lệ</p>
-                <p className="font-semibold text-lg">
-                  {resultSummary.percentage.toFixed(1)}%
-                </p>
-              </div>
-              <div className="rounded-md border p-3">
-                <p className="text-muted-foreground text-xs">
-                  Số câu đã trả lời
-                </p>
-                <p className="font-semibold text-lg">
-                  {resultSummary.answeredCount}/{resultSummary.questionCount}
-                </p>
-              </div>
-              <div className="rounded-md border p-3">
-                <p className="text-muted-foreground text-xs">
-                  Thời gian làm bài
-                </p>
-                <p className="font-semibold text-lg">
-                  {formatTime(resultSummary.timeSpentSeconds)}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        ) : null}
-
-        <Card className="flex min-h-0 flex-1 flex-col overflow-hidden">
-          <CardHeader className="shrink-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge variant="secondary">
-                Câu {safeActiveQuestionIndex + 1}
-              </Badge>
-              <QuestionFormatIconBadge format={currentQuestion.format} />
-              {isCurrentBookmarked ? (
-                <Badge className="gap-1" variant="outline">
-                  <BookmarkIcon className="size-3.5 text-amber-500" />
-                  Đã đánh dấu
-                </Badge>
-              ) : null}
-            </div>
-            <CardTitle className="text-base md:text-lg">
-              <Response>{currentQuestion.question}</Response>
-            </CardTitle>
-          </CardHeader>
-
-          <CardContent className="min-h-0 flex-1 overflow-hidden">
-            <ScrollArea className="h-full pr-3">
-              <div className="space-y-4 pb-1">
-                {isStarted ? (
-                  renderQuestionAnswer(
-                    currentQuestion,
-                    currentAnswer,
-                    handleAnswerChange,
-                    isSubmitted
-                  )
-                ) : (
-                  <div className="rounded-md border border-dashed p-4 text-muted-foreground text-sm">
-                    Nhấn <strong>Bắt đầu làm bài</strong> để mở khóa trả lời câu
-                    hỏi.
-                  </div>
-                )}
-
-                {isSubmitted && reviewItem ? (
-                  <div className="space-y-3 rounded-lg border bg-muted/20 p-4">
-                    <p className="font-medium text-sm">Review câu hỏi</p>
-
-                    <div className="grid gap-2 sm:grid-cols-2">
-                      <div>
-                        <p className="mb-1 text-muted-foreground text-xs">
-                          Điểm câu này
-                        </p>
-                        <p className="font-medium text-sm">
-                          {reviewItem.score.toFixed(2)} /{" "}
-                          {reviewItem.maxScore.toFixed(2)}
-                        </p>
-                      </div>
-
-                      <div>
-                        <p className="mb-1 text-muted-foreground text-xs">
-                          Trạng thái
-                        </p>
-                        {reviewItem.essayStatus === "failed" ? (
-                          <p className="flex items-center gap-1 text-amber-600 text-sm">
-                            <AlertCircleIcon className="size-4" />
-                            Chưa chấm được tự luận
-                          </p>
-                        ) : (
-                          <p className="text-sm">
-                            {reviewItem.isAnswered
-                              ? "Đã trả lời"
-                              : "Chưa trả lời"}
-                          </p>
-                        )}
-                      </div>
+                <Card className="border-primary/20 shadow-sm">
+                  <CardHeader className="space-y-2 pb-4">
+                    <div className="space-y-1">
+                      <CardTitle className="text-xl">Kết quả bài làm</CardTitle>
+                      <CardDescription>
+                        Điểm tổng hợp cho tất cả dạng câu hỏi (bao gồm tự luận).
+                      </CardDescription>
                     </div>
+                  </CardHeader>
+                  <CardContent className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+                    <div className="rounded-md border bg-muted/20 p-3">
+                      <p className="text-muted-foreground text-xs">Tổng điểm</p>
+                      <p className="font-semibold text-lg">
+                        {resultSummary.totalScore.toFixed(2)} /{" "}
+                        {resultSummary.maxScore.toFixed(2)}
+                      </p>
+                    </div>
+                    <div className="rounded-md border bg-muted/20 p-3">
+                      <p className="text-muted-foreground text-xs">Tỷ lệ</p>
+                      <p className="font-semibold text-lg">
+                        {resultSummary.percentage.toFixed(1)}%
+                      </p>
+                    </div>
+                    <div className="rounded-md border bg-muted/20 p-3">
+                      <p className="text-muted-foreground text-xs">
+                        Số câu đã trả lời
+                      </p>
+                      <p className="font-semibold text-lg">
+                        {resultSummary.answeredCount}/
+                        {resultSummary.questionCount}
+                      </p>
+                    </div>
+                    <div className="rounded-md border bg-muted/20 p-3">
+                      <p className="text-muted-foreground text-xs">
+                        Thời gian làm bài
+                      </p>
+                      <p className="font-semibold text-lg">
+                        {formatTime(resultSummary.timeSpentSeconds)}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </section>
+            ) : null}
 
-                    <div className="space-y-2">
-                      <div>
-                        <p className="mb-1 text-muted-foreground text-xs">
-                          Câu trả lời của bạn
+            <section className="flex min-h-0 flex-1 flex-col space-y-2 overflow-hidden">
+              <p className="px-1 text-muted-foreground text-xs uppercase tracking-wide">
+                Nội dung câu hỏi
+              </p>
+              <Card className="flex min-h-0 flex-1 flex-col overflow-hidden border-primary/10">
+                <CardHeader className="shrink-0 space-y-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge variant="secondary">
+                      Câu {safeActiveQuestionIndex + 1}
+                    </Badge>
+                    <QuestionFormatIconBadge format={currentQuestion.format} />
+                    {isCurrentBookmarked ? (
+                      <Badge className="gap-1" variant="outline">
+                        <BookmarkIcon className="size-3.5 text-amber-500" />
+                        Đã đánh dấu
+                      </Badge>
+                    ) : null}
+                  </div>
+                  <div className="rounded-md border bg-muted/20 p-3">
+                    <p className="mb-2 text-muted-foreground text-xs uppercase tracking-wide">
+                      Đề bài
+                    </p>
+                    <Response>{currentQuestion.question}</Response>
+                  </div>
+                </CardHeader>
+
+                <CardContent className="min-h-0 flex-1 overflow-hidden">
+                  <ScrollArea className="h-full pr-3">
+                    <div className="space-y-3 pb-1">
+                      <section className="space-y-2 rounded-md border bg-card p-3">
+                        <p className="text-muted-foreground text-xs uppercase tracking-wide">
+                          Trả lời câu hỏi
                         </p>
-                        <pre className="whitespace-pre-wrap rounded-md border bg-background p-3 text-sm">
-                          {reviewItem.userAnswerText}
-                        </pre>
-                      </div>
+                        {isStarted ? (
+                          <QuestionAnswerInput
+                            answer={currentAnswer}
+                            disabled={isSubmitted}
+                            onAnswerChange={handleAnswerChange}
+                            question={currentQuestion}
+                          />
+                        ) : (
+                          <div className="rounded-md border border-dashed p-4 text-muted-foreground text-sm">
+                            Nhấn <strong>Bắt đầu làm bài</strong> để mở khóa trả
+                            lời câu hỏi.
+                          </div>
+                        )}
+                      </section>
 
-                      <div>
-                        <p className="mb-1 text-muted-foreground text-xs">
-                          Đáp án tham chiếu
-                        </p>
-                        <pre className="whitespace-pre-wrap rounded-md border bg-background p-3 text-sm">
-                          {reviewItem.correctAnswerText}
-                        </pre>
-                      </div>
-
-                      {reviewItem.essayFeedback ? (
-                        <div>
-                          <p className="mb-1 text-muted-foreground text-xs">
-                            Phản hồi AI
+                      {isSubmitted && reviewItem ? (
+                        <section className="space-y-2 rounded-md border border-primary/20 bg-muted/10 p-3">
+                          <p className="text-muted-foreground text-xs uppercase tracking-wide">
+                            Chi tiết review
                           </p>
-                          <pre className="whitespace-pre-wrap rounded-md border bg-background p-3 text-sm">
-                            {reviewItem.essayFeedback}
-                          </pre>
-                        </div>
+                          <QuestionReviewPanel reviewItem={reviewItem} />
+                        </section>
                       ) : null}
                     </div>
-                  </div>
-                ) : null}
-              </div>
-            </ScrollArea>
-          </CardContent>
-        </Card>
+                  </ScrollArea>
+                </CardContent>
+              </Card>
+            </section>
+          </>
+        ) : (
+          <TakeTestPreStartState
+            onStart={handleStart}
+            selectedDurationMinutes={selectedDurationMinutes}
+            title={title}
+            totalQuestions={totalQuestions}
+          />
+        )}
       </main>
 
-      <footer className="shrink-0 border-t bg-card px-3 py-3 md:px-4">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <Button
-            disabled={isFirstQuestion}
-            onClick={goToPrevious}
-            type="button"
-            variant="outline"
-          >
-            <ChevronLeftIcon className="size-4" />
-            Câu trước
-          </Button>
-
-          {isSubmitted ? (
-            failedEssayIndices.length > 0 ? (
-              renderPrimaryActionButton()
-            ) : (
-              <Badge variant="secondary">Đang ở chế độ review</Badge>
-            )
-          ) : (
-            renderPrimaryActionButton()
-          )}
-
-          <Button
-            disabled={isLastQuestion}
-            onClick={goToNext}
-            type="button"
-            variant="outline"
-          >
-            Câu sau
-            <ChevronRightIcon className="size-4" />
-          </Button>
-        </div>
-      </footer>
+      {canShowTestContent ? (
+        <TakeTestFooter
+          failedEssayCount={failedEssayIndices.length}
+          isFirstQuestion={isFirstQuestion}
+          isLastQuestion={isLastQuestion}
+          isStarted={isStarted}
+          isSubmitted={isSubmitted}
+          isSubmitting={isSubmitting}
+          onNext={goToNext}
+          onPrevious={goToPrevious}
+          onRetryFailedEssays={retryFailedEssayGrades}
+          onSubmit={submitTest}
+        />
+      ) : null}
     </Collapsible>
   );
 }
