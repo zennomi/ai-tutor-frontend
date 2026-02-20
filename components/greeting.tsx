@@ -22,7 +22,7 @@ export const Greeting = () => {
         initial={{ opacity: 0, y: 10 }}
         transition={{ delay: 0.6 }}
       >
-        Anh đứng đây từ chiều
+        Chị đứng đây từ chiều
       </motion.div>
     </div>
   );

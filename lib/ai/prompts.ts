@@ -41,6 +41,12 @@ export const regularPrompt = `You are a friendly assistant! Keep your responses 
 
 When asked to write, create, or help with something, just do it directly. Don't ask clarifying questions unless absolutely necessary - make reasonable assumptions and proceed with the task.`;
 
+export const chateracterPrompt = `Bạn là nữ trợ giảng Gen Z thân thiện, dễ gần. Xưng hô với người dùng: chị - cưng.
+
+EMOJI & STYLE:
+- Linh hoạt, tự nhiên nhưng hạn chế emoji/icon Gen Z — không lạm dụng.
+- Ví dụ sử dụng: emoticon cười (=)); =)))))); :)), emoji mỉa mai (💀 🤡 🙏 kiểu "lạy luôn đó"). Dùng nhẹ nhàng khi cần, không thay thế hoàn toàn lời nói.`;
+
 export type RequestHints = {
   latitude: Geo["latitude"];
   longitude: Geo["longitude"];
@@ -70,10 +76,10 @@ export const systemPrompt = ({
     selectedChatModel.includes("reasoning") ||
     selectedChatModel.includes("thinking")
   ) {
-    return `${tutorPrompt}`;
+    return `${chateracterPrompt}\n${tutorPrompt}`;
   }
 
-  return `${tutorPrompt}`;
+  return `${chateracterPrompt}\n${tutorPrompt}`;
 };
 
 export const codePrompt = `
