@@ -19,6 +19,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import type {
   ExtractedQuestion,
   GeneratedQuestion,
@@ -43,6 +48,7 @@ type PreviewRowProps = {
   countBadge?: string;
   onViewDetail: () => void;
   icon: ReactNode;
+  viewDetailLabel: string;
 };
 
 function PreviewRow({
@@ -51,6 +57,7 @@ function PreviewRow({
   countBadge,
   onViewDetail,
   icon,
+  viewDetailLabel,
 }: PreviewRowProps) {
   return (
     <div className="flex items-center justify-between gap-3 rounded-lg border bg-muted/20 p-3">
@@ -64,15 +71,20 @@ function PreviewRow({
 
       <div className="flex shrink-0 items-center gap-2">
         {countBadge ? <Badge variant="secondary">{countBadge}</Badge> : null}
-        <Button
-          onClick={onViewDetail}
-          size="sm"
-          type="button"
-          variant="outline"
-        >
-          <EyeIcon className="size-4" />
-          Xem chi tiết
-        </Button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              aria-label={viewDetailLabel}
+              onClick={onViewDetail}
+              size="icon-sm"
+              type="button"
+              variant="outline"
+            >
+              <EyeIcon className="size-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>{viewDetailLabel}</TooltipContent>
+        </Tooltip>
       </div>
     </div>
   );
@@ -147,6 +159,7 @@ export function TestGeneratorPreviewCard({
                 : "Chưa có markdown."
             }
             title="Markdown preview"
+            viewDetailLabel="Xem chi tiết markdown"
           />
 
           <PreviewRow
@@ -159,6 +172,7 @@ export function TestGeneratorPreviewCard({
                 : "Chưa có dữ liệu trích xuất."
             }
             title="Câu hỏi đã trích xuất"
+            viewDetailLabel="Xem chi tiết câu hỏi đã trích xuất"
           />
 
           <PreviewRow
@@ -175,6 +189,7 @@ export function TestGeneratorPreviewCard({
                 : "Chưa có câu hỏi mới."
             }
             title="Câu hỏi đã tạo"
+            viewDetailLabel="Xem chi tiết câu hỏi đã tạo"
           />
         </CardContent>
       </Card>

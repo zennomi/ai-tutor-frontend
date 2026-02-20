@@ -4,6 +4,7 @@ import {
   CheckCircleIcon,
   CircleIcon,
   ClockIcon,
+  RotateCcwIcon,
   XCircleIcon,
 } from "lucide-react";
 import { CheckCircleFillIcon } from "@/components/icons";
@@ -17,6 +18,11 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import type { TestGeneratorPipelineStep } from "@/lib/test-generator/schemas";
 import { cn } from "@/lib/utils";
 
@@ -151,15 +157,21 @@ export function TestGeneratorPipelineCard({
                 </div>
 
                 <div className="flex shrink-0 items-center gap-2">
-                  <Button
-                    disabled={!canRetryFromStep(step)}
-                    onClick={() => onRetryFromStep(step)}
-                    size="sm"
-                    type="button"
-                    variant="outline"
-                  >
-                    Retry bước này
-                  </Button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        aria-label="Retry bước này"
+                        disabled={!canRetryFromStep(step)}
+                        onClick={() => onRetryFromStep(step)}
+                        size="icon-sm"
+                        type="button"
+                        variant="outline"
+                      >
+                        <RotateCcwIcon className="size-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Retry bước này</TooltipContent>
+                  </Tooltip>
 
                   <Badge
                     className={cn(

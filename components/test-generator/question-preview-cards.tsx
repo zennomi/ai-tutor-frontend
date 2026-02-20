@@ -1,5 +1,11 @@
 "use client";
 
+import {
+  CheckCircleIcon,
+  FileTextIcon,
+  ListChecksIcon,
+  type LucideIcon,
+} from "lucide-react";
 import { Response } from "@/components/elements/response";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,6 +14,43 @@ import type {
   GeneratedQuestion,
 } from "@/lib/test-generator/schemas";
 import { cn } from "@/lib/utils";
+
+const questionFormatMeta: Record<
+  GeneratedQuestion["format"],
+  { icon: LucideIcon; label: string }
+> = {
+  MULTIPLE_CHOICE: {
+    icon: ListChecksIcon,
+    label: "Trắc nghiệm",
+  },
+  TRUE_FALSE: {
+    icon: CheckCircleIcon,
+    label: "Đúng / Sai",
+  },
+  ESSAY: {
+    icon: FileTextIcon,
+    label: "Tự luận",
+  },
+};
+
+function QuestionFormatBadge({
+  format,
+}: {
+  format: ExtractedQuestion["format"] | GeneratedQuestion["format"];
+}) {
+  const { icon: Icon, label } = questionFormatMeta[format];
+
+  return (
+    <Badge
+      aria-label={`Dạng câu hỏi: ${label}`}
+      className="px-2"
+      variant="secondary"
+    >
+      <Icon aria-hidden className="size-3.5" />
+      <span className="sr-only">{label}</span>
+    </Badge>
+  );
+}
 
 type ExtractedQuestionPreviewCardsProps = {
   items: ExtractedQuestion[];
@@ -48,7 +91,7 @@ export function ExtractedQuestionPreviewCards({
           <CardHeader className="space-y-2 pb-3">
             <CardTitle className="text-sm">Câu #{index + 1}</CardTitle>
             <div className="flex flex-wrap items-center gap-1.5">
-              <Badge variant="secondary">{item.format}</Badge>
+              <QuestionFormatBadge format={item.format} />
               <Badge variant="outline">Key: {item.key}</Badge>
               <Badge variant="outline">
                 {item.has_image ? "Có hình ảnh" : "Không hình ảnh"}
@@ -175,7 +218,7 @@ export function GeneratedQuestionPreviewCards({
           <CardHeader className="space-y-2 pb-3">
             <CardTitle className="text-sm">Câu #{index + 1}</CardTitle>
             <div className="flex flex-wrap items-center gap-1.5">
-              <Badge variant="secondary">{item.format}</Badge>
+              <QuestionFormatBadge format={item.format} />
               <Badge variant="outline">Lớp {item.grade}</Badge>
               <Badge variant="outline">{item.textbook}</Badge>
               <Badge variant="outline">{item.unit}</Badge>

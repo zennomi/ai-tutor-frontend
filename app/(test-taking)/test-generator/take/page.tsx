@@ -7,8 +7,11 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
   ClockIcon,
+  FileTextIcon,
   HomeIcon,
+  ListChecksIcon,
   Loader2Icon,
+  type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -79,6 +82,32 @@ function getQuestionFormatLabel(format: GeneratedQuestion["format"]) {
   }
 
   return "Tự luận";
+}
+
+const questionFormatIcons: Record<GeneratedQuestion["format"], LucideIcon> = {
+  MULTIPLE_CHOICE: ListChecksIcon,
+  TRUE_FALSE: CheckCircleIcon,
+  ESSAY: FileTextIcon,
+};
+
+function QuestionFormatIconBadge({
+  format,
+}: {
+  format: GeneratedQuestion["format"];
+}) {
+  const label = getQuestionFormatLabel(format);
+  const Icon = questionFormatIcons[format];
+
+  return (
+    <Badge
+      aria-label={`Dạng câu hỏi: ${label}`}
+      className="px-2"
+      variant="outline"
+    >
+      <Icon aria-hidden className="size-3.5" />
+      <span className="sr-only">{label}</span>
+    </Badge>
+  );
 }
 
 function normalizeText(value: string) {
@@ -1046,9 +1075,7 @@ export default function TakeTestPage() {
               <Badge variant="secondary">
                 Câu {safeActiveQuestionIndex + 1}
               </Badge>
-              <Badge variant="outline">
-                {getQuestionFormatLabel(currentQuestion.format)}
-              </Badge>
+              <QuestionFormatIconBadge format={currentQuestion.format} />
               {isCurrentBookmarked ? (
                 <Badge className="gap-1" variant="outline">
                   <BookmarkIcon className="size-3.5 text-amber-500" />

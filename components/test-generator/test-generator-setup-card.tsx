@@ -32,6 +32,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import type { TestGeneratorPipelineStep } from "@/lib/test-generator/schemas";
 import type { Attachment, GenerationOptions } from "@/lib/types";
 
@@ -253,14 +258,21 @@ export function TestGeneratorSetupCard({
               )}
             </Button>
 
-            <Button
-              disabled={!isRunning}
-              onClick={onCancel}
-              type="button"
-              variant="secondary"
-            >
-              Hủy
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  aria-label="Hủy tác vụ đang chạy"
+                  disabled={!isRunning}
+                  onClick={onCancel}
+                  size="icon"
+                  type="button"
+                  variant="secondary"
+                >
+                  <XCircleIcon className="size-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Hủy tác vụ đang chạy</TooltipContent>
+            </Tooltip>
 
             {failedStep && !isRunning && (
               <>
@@ -285,17 +297,22 @@ export function TestGeneratorSetupCard({
             )}
 
             {downloadUrl && (
-              <Button asChild variant="outline">
-                <a
-                  download={generatedFilename}
-                  href={downloadUrl}
-                  rel="noopener noreferrer"
-                  target="_blank"
-                >
-                  <DownloadIcon className="size-4" />
-                  Tải DOCX đã tạo
-                </a>
-              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button asChild size="icon" variant="outline">
+                    <a
+                      aria-label="Tải DOCX đã tạo"
+                      download={generatedFilename}
+                      href={downloadUrl}
+                      rel="noopener noreferrer"
+                      target="_blank"
+                    >
+                      <DownloadIcon className="size-4" />
+                    </a>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Tải DOCX đã tạo</TooltipContent>
+              </Tooltip>
             )}
 
             <Button
@@ -307,15 +324,21 @@ export function TestGeneratorSetupCard({
               Làm bài kiểm tra
             </Button>
 
-            <Button
-              disabled={isRunning}
-              onClick={onClearSavedState}
-              type="button"
-              variant="ghost"
-            >
-              <Trash2Icon className="size-4" />
-              Xóa dữ liệu đã lưu
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  aria-label="Xóa dữ liệu đã lưu"
+                  disabled={isRunning}
+                  onClick={onClearSavedState}
+                  size="icon"
+                  type="button"
+                  variant="ghost"
+                >
+                  <Trash2Icon className="size-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Xóa dữ liệu đã lưu</TooltipContent>
+            </Tooltip>
           </div>
 
           {failedStep && (
